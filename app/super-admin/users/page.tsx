@@ -11,7 +11,6 @@ export default async function AdminUsersPage() {
     <main className="p-4 sm:p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">User Management</h1>
-        {/* <p className="text-sm text-muted-foreground">Manage roles, status, credentials</p> */}
       </div>
       <UserTable />
     </main>
