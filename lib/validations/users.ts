@@ -1,5 +1,5 @@
+import { Role } from "@prisma/client";
 import * as z from "zod";
-import { Role } from "@/generated/prisma/enums";
 
 export const roleEnum = z.nativeEnum(Role);
 export const statusEnum = z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]);

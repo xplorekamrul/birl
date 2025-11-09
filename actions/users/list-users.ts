@@ -1,9 +1,9 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { authActionClient } from "@/lib/safe-action/clients";
-import { Prisma, $Enums } from "@/generated/prisma/client";
 import { userListSchema } from "@/lib/validations/users";
+import { $Enums, Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const listUsers = authActionClient
   .schema(userListSchema)

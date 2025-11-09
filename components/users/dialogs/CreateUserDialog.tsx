@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createUser } from "@/actions/users/create-user";
+import { Role } from "@prisma/client";
 import { Eye, EyeOff } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { createUser } from "@/actions/users/create-user";
-import { Role } from "@/generated/prisma/enums";
+import { useMemo, useState } from "react";
 
 type Props = {
   open: boolean;
@@ -68,10 +68,10 @@ export default function CreateUserDialog({ open, onOpenChange, onCreated }: Prop
               <option value="ADMIN">Admin</option>
               <option value="SUPER_ADMIN">Super Admin</option>
               <option value="DEVELOPER">Developer</option>
-              <option value="USER">User</option>  
+              <option value="USER">User</option>
               <option value="VENDOR">Vendor</option>
             </select>
-          </div> 
+          </div>
           <div className="relative">
             <label className="text-sm">Password</label>
             <input

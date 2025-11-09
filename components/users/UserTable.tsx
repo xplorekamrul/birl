@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useAction } from "next-safe-action/hooks";
 import { listUsers } from "@/actions/users/list-users";
-import { Role } from "@/generated/prisma/enums";
+import { Filter, Plus, Search } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useState } from "react";
 import UserRowActions from "./UserRowActions";
 import CreateUserDialog from "./dialogs/CreateUserDialog";
-import { Filter, Plus, Search } from "lucide-react";
 
 type Row = {
   id: string;
@@ -87,7 +86,7 @@ export default function UserTable() {
           <div>
             <p className="text-sm font-medium mb-1">Role</p>
             <div className="flex flex-wrap gap-2">
-              {(["ADMIN","SUPER_ADMIN","DEVELOPER"] as const).map(r => (
+              {(["ADMIN", "SUPER_ADMIN", "DEVELOPER"] as const).map(r => (
                 <button
                   key={r}
                   onClick={() => { setRoles(prev => toggle(prev, r)); setPage(1); }}
@@ -101,7 +100,7 @@ export default function UserTable() {
           <div>
             <p className="text-sm font-medium mb-1">Status</p>
             <div className="flex flex-wrap gap-2">
-              {(["ACTIVE","INACTIVE","SUSPENDED"] as const).map(s => (
+              {(["ACTIVE", "INACTIVE", "SUSPENDED"] as const).map(s => (
                 <button
                   key={s}
                   onClick={() => { setStatuses(prev => toggle(prev, s)); setPage(1); }}
@@ -137,13 +136,12 @@ export default function UserTable() {
                   <td className="px-3 py-2">{u.email}</td>
                   <td className="px-3 py-2">{u.role}</td>
                   <td className="px-3 py-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs border text-center ${
-                      u.status === "ACTIVE"
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs border text-center ${u.status === "ACTIVE"
                         ? "border-emerald-600 text-emerald-700"
                         : u.status === "SUSPENDED"
-                        ? "border-red-600 text-red-700"
-                        : "border-amber-600 text-amber-700"
-                    }`}>
+                          ? "border-red-600 text-red-700"
+                          : "border-amber-600 text-amber-700"
+                      }`}>
                       {u.status}
                     </span>
                   </td>

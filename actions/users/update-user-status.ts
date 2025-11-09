@@ -1,14 +1,14 @@
 "use server";
 
+import { $Enums, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { superAdminActionClient } from "@/lib/safe-action/clients";
-import { Prisma, $Enums } from "@/generated/prisma/client";
 import { updateUserStatusSchema } from "@/lib/validations/users";
 
 export const updateUserStatus = superAdminActionClient
   .schema(updateUserStatusSchema)
   .action(async ({ parsedInput }) => {
-    const { id, status } = parsedInput; 
+    const { id, status } = parsedInput;
 
     const data: Prisma.UserUpdateInput =
       status === "SUSPENDED"

@@ -1,10 +1,10 @@
 "use server";
 
-import { actionClient } from "@/lib/safe-action/clients";
-import { registerSchema } from "@/lib/validations/auth"; 
 import { prisma } from "@/lib/prisma";
-import { Role } from "@/generated/prisma/enums";
+import { actionClient } from "@/lib/safe-action/clients";
+import { registerSchema } from "@/lib/validations/auth";
 import { hashPassword } from "@/lib/hash";
+import { Role } from "@prisma/client";
 
 export const registerUser = actionClient
   .schema(registerSchema)

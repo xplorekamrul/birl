@@ -1,21 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAction } from "next-safe-action/hooks";
 import { saveVendorProfile } from "@/actions/vendor/setup/save-vendor-profile";
 import type { VendorSetupValues } from "@/lib/validations/vendor";
+import { useAction } from "next-safe-action/hooks";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
-import { Store, Globe2, Building2, Phone, MapPin } from "lucide-react";
-import { VendorProfile } from "@/generated/prisma/client";
+import { Building2, Globe2, MapPin, Phone, Store } from "lucide-react";
+import { VendorProfile } from "@prisma/client";
 
 type Props = {
   initialVendor: VendorProfile | null;
@@ -93,8 +93,8 @@ export default function VendorSetupForm({ initialVendor }: Props) {
     } else {
       setFormError(
         res?.data?.message ??
-          result?.serverError ??
-          "Failed to save vendor profile. Please try again."
+        result?.serverError ??
+        "Failed to save vendor profile. Please try again."
       );
     }
   }
@@ -376,8 +376,8 @@ export default function VendorSetupForm({ initialVendor }: Props) {
                   ? "Saving…"
                   : "Creating…"
                 : initialVendor
-                ? "Save changes"
-                : "Create shop"}
+                  ? "Save changes"
+                  : "Create shop"}
             </Button>
           </div>
         </div>

@@ -1,10 +1,10 @@
 "use server";
 
+import { hashPassword } from "@/lib/hash";
+import { prisma } from "@/lib/prisma";
 import { actionClient } from "@/lib/safe-action/clients";
 import { registerSchema } from "@/lib/validations/auth";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@/generated/prisma/enums";
-import { hashPassword } from "@/lib/hash";
+import { Role } from "@prisma/client";
 
 export const register = actionClient
   .schema(registerSchema)
@@ -22,7 +22,7 @@ export const register = actionClient
     } else if (email === (process.env.DEVELOPER_EMAIL ?? "").toLowerCase().trim()) {
       role = Role.DEVELOPER;
     }
- 
+
     const pwd = await hashPassword(password);
 
     const user = await prisma.user.create({
