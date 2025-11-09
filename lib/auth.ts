@@ -7,13 +7,12 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { prisma } from "./prisma";
 
-// [EDIT] Centralize the role/status literal types so we reuse everywhere below
 type AppRole =
   | "DEVELOPER"
   | "SUPER_ADMIN"
   | "ADMIN"
-  | "USER"       // [EDIT] added
-  | "VENDOR";    // [EDIT] added
+  | "USER"   
+  | "VENDOR";
 
 type AppStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
@@ -33,7 +32,6 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email },
-          // [EDIT] we only need a few fields here
           select: {
             id: true,
             name: true,
@@ -48,12 +46,12 @@ export const authOptions: NextAuthOptions = {
         const ok = await bcrypt.compare(password, user.password);
         if (!ok) return null;
 
-        // [EDIT] widen the role union to include USER and VENDOR
+        // widen the role union to include USER and VENDOR
         const u: User = {
           id: user.id,
           name: user.name ?? null,
           email: user.email,
-          role: user.role as AppRole,     // [EDIT]
+          role: user.role as AppRole,     
           status: user.status as AppStatus,
         } as User;
 
@@ -64,9 +62,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
-        // [EDIT] include all roles
+        // include all roles
         token.id = user.id;
-        token.role = user.role as AppRole;          // [EDIT]
+        token.role = user.role as AppRole;          
         token.status = user.status as AppStatus;
       } else if (token.email) {
         const dbUser = await prisma.user.findUnique({
@@ -75,7 +73,7 @@ export const authOptions: NextAuthOptions = {
         });
         if (dbUser) {
           token.id = dbUser.id;
-          token.role = dbUser.role as AppRole;      // [EDIT]
+          token.role = dbUser.role as AppRole;      
           token.status = dbUser.status as AppStatus;
         }
       }
@@ -83,9 +81,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
-        // [EDIT] include all roles on the session
+        // include all roles on the session
         session.user.id = token.id as string;
-        session.user.role = token.role as AppRole;        // [EDIT]
+        session.user.role = token.role as AppRole;        
         session.user.status = token.status as AppStatus;
       }
       return session;

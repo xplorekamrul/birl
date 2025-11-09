@@ -36,7 +36,6 @@ enum Visibility {
   HIDDEN
 }
 
-<<<<<<< HEAD
 enum PurchaseType {
   NEW
   REFURBISHED
@@ -57,39 +56,6 @@ enum OrderStatus {
 
 enum ProductStatus {
   DRAFT
-=======
-
-/* ===== auth Models ===== */
-model User {
-  id            String        @id @default(cuid())
-  name          String?
-  email         String        @unique
-  emailVerified DateTime?     @map("email_verified")
-  password      String
-  role          Role          @default(ADMIN)
-  status        AccountStatus @default(ACTIVE)
-  suspendedAt   DateTime?     @map("suspended_at")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-
-}
-
-model PasswordResetOtp {
-  id         String   @id @default(cuid())
-  email      String   @db.VarChar(255)
-  codeHash   String   @map("code_hash")
-  expiresAt  DateTime @map("expires_at")
-  attempts   Int      @default(0)
-  consumedAt DateTime? @map("consumed_at")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  @@index([email, createdAt])
-}
-
-
-/// ===================== HR ENUMS =====================
-enum EmploymentStatus {
->>>>>>> 89481806d891c1e1d2b7a7e9226847bbd4b1cdaf
   ACTIVE
   INACTIVE
   ARCHIVED
@@ -170,7 +136,6 @@ enum StockMovementType {
   ADJUST
 }
 
-<<<<<<< HEAD
 /**
  * ===== Models =====
  */
@@ -236,15 +201,6 @@ model PasswordResetOtp {
   @@index([email, createdAt])
 }
 
-=======
-model Employee {
-  id             String            @id @default(cuid())
-  name           String
-  empId          String            @unique @map("emp_id")
-  joiningDate    DateTime?         @map("joining_date")
-  contractType   ContractType      @map("contract_type")
-  status         EmploymentStatus  @default(ACTIVE)
->>>>>>> 89481806d891c1e1d2b7a7e9226847bbd4b1cdaf
 
 
 model Address {
@@ -350,7 +306,6 @@ model Category {
   @@index([isActive])
 }
 
-<<<<<<< HEAD
 model Product {
   id         String        @id @default(cuid())
   vendorId   String        @map("vendor_id")
@@ -359,10 +314,6 @@ model Product {
   category   Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   brandId    String?       @map("brand_id")
   brand      Brand?        @relation(fields: [brandId], references: [id], onDelete: SetNull)
-=======
-model Document {
-  id          String         @id @default(cuid())
->>>>>>> 89481806d891c1e1d2b7a7e9226847bbd4b1cdaf
 
   name             String
   slug             String  @unique
@@ -739,18 +690,12 @@ model ShippingProfile {
   description String?
   isDefault   Boolean       @default(false) @map("is_default")
 
-<<<<<<< HEAD
   methods ShippingMethod[]
-=======
-  employeeId  String         @map("employee_id") 
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
->>>>>>> 89481806d891c1e1d2b7a7e9226847bbd4b1cdaf
 
   @@unique([vendorId, name])
   @@index([vendorId])
 }
 
-<<<<<<< HEAD
 model ShippingMethod {
   id               String          @id @default(cuid())
   profileId        String          @map("profile_id")
@@ -990,19 +935,4 @@ model SystemSetting {
   key       String   @unique
   value     Json
   updatedAt DateTime @updatedAt @map("updated_at")
-=======
-model JobHistory {
-  id           String   @id @default(cuid())
-
-  companyName  String   @map("company_name")
-  designation  String
-  startDate    DateTime @map("start_date")
-  endDate      DateTime? @map("end_date")
-
-  employeeId   String   @map("employee_id")
-  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt      @map("updated_at")
->>>>>>> 89481806d891c1e1d2b7a7e9226847bbd4b1cdaf
 }

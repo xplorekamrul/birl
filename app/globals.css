@@ -4,49 +4,64 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --pcolor: #1C1C84;
-  --hcolor: #1C1C84;
-  --scolor: #009966;
-  --bcolor: #202122;
-  --linkcolor: #4f4f4f;
+  /* Brand colors */
+  --pcolor: #1E3A8A; /* Deep Blue – primary */
+  --hcolor: #1E3A8A;
+  --scolor: #10B981; /* Emerald – accent / positive */
+  --bcolor: #0F172A; /* Slate-ish dark for body text */
+  --linkcolor: #1E3A8A; /* Primary for links */
   --white: #ffffff;
   --black: #000000;
-  --tcolor: #06064f;                                                                                                                                                                                                                                                 
-  --greencolor: #016926;
-  --light: #F7F7F7;
+  --tcolor: #0F172A;
+  --greencolor: #10B981;
+  --light: #F9FAFB;
+
+  /* ShadCN design tokens mapped to your palette */
+  --background: #E0F2FE;         /* Soft Sky Blue */
+  --foreground: #0F172A;         /* Dark slate text */
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+
+  --primary: #1E3A8A;            /* Deep Blue */
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #FBBF24;          /* Gold */
+  --secondary-foreground: #111827;
+
+  --muted: #E5E7EB;
+  --muted-foreground: #64748B;   /* Slate gray */
+
+  --accent: #10B981;             /* Emerald */
+  --accent-foreground: #022C22;
+
+  --destructive: #DC2626;
+
+  --border: #BFDBFE;             /* Light blue border */
+  --input: #BFDBFE;
+  --ring: #1E3A8A;               /* Primary ring */
+
+  /* Charts (can tweak later) */
+  --chart-1: #1E3A8A;
+  --chart-2: #FBBF24;
+  --chart-3: #10B981;
+  --chart-4: #64748B;
+  --chart-5: #EC4899;
+
+  /* Sidebar */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #1E3A8A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #E0F2FE;
+  --sidebar-accent-foreground: #0F172A;
+  --sidebar-border: #BFDBFE;
+  --sidebar-ring: #1E3A8A;
+
   --radius: 0.625rem;
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
 }
+
 
 @theme inline {
   --color-pcolor: var(--pcolor);
