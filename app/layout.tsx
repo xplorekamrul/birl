@@ -3,7 +3,10 @@ import Navbar from "@/components/layout/Navbar";
 import AppProviders from "@/components/providers/AppProviders";
 import type { Metadata } from "next";
 import "./globals.css";
+import "@uploadthing/react/styles.css";
+
 import CartDrawer from "@/components/cart/CartDrawer";
+
 
 export const metadata: Metadata = { title: "Birl Ecommerce" };
 

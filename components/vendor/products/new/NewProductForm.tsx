@@ -3,27 +3,34 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
-import { createProduct } from "@/actions/vendor/products/create-product";
+import { createProductWithImages } from "@/actions/vendor/products/create-product-with-images";
 import type { ProductCreateValues } from "@/lib/validations/product";
 
 import { Separator } from "@/components/ui/separator";
-
 import BasicInfoSection from "./sections/BasicInfoSection";
 import DescriptionSection from "./sections/DescriptionSection";
 import PricingInventorySection from "./sections/PricingInventorySection";
 import SellingOptionsSection from "./sections/SellingOptionsSection";
 import SeoSection from "./sections/SeoSection";
 import FooterActionsBar from "./sections/FooterActionsBar";
+import ImagesSection from "./sections/ImagesSection";
+
+import {
+  useDocumentUploader,
+  type UploadResult,
+} from "@/lib/media/uploadthing-upload";
 
 type SimpleRef = { id: string; name: string };
 
 type Props = {
-  vendorId: string;
+  vendorId: string; // you can keep this if you want, even if not used in the action
   categories: SimpleRef[];
   brands: SimpleRef[];
 };
 
-type FieldErrors = Partial<Record<keyof ProductCreateValues, string | undefined>>;
+type FieldErrors = Partial<
+  Record<keyof ProductCreateValues, string | undefined>
+>;
 
 const defaultValues: ProductCreateValues = {
   name: "",
@@ -57,14 +64,60 @@ function slugify(raw: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+type SuccessPayload = {
+  ok: true;
+  message: string;
+  product: { id: string; slug: string };
+};
+
+type ErrorPayload = {
+  ok: false;
+  message: string;
+};
+
+function isSuccess(data: unknown): data is SuccessPayload {
+  if (typeof data !== "object" || data === null) return false;
+
+  const maybe = data as {
+    ok?: unknown;
+    product?: { id?: unknown; slug?: unknown };
+  };
+
+  return (
+    maybe.ok === true &&
+    typeof maybe.product?.id === "string" &&
+    typeof maybe.product.slug === "string"
+  );
+}
+
+function extractErrorMessage(data: unknown): string | undefined {
+  if (typeof data !== "object" || data === null) return undefined;
+
+  const maybe = data as { message?: unknown };
+  if (typeof maybe.message === "string") return maybe.message;
+
+  return undefined;
+}
+
+// Local image type matches ImagesSection
+type LocalImage = {
+  id: string;
+  file: File;
+  previewUrl: string;
+  alt?: string;
+  isPrimary?: boolean;
+};
+
 export default function NewProductForm({
+  vendorId, // currently unused in this file, but available if you want to show something
   categories: initialCategories,
   brands: initialBrands,
 }: Props) {
   const router = useRouter();
-  const { executeAsync, status, result } = useAction(createProduct);
+  const { executeAsync, status, result } = useAction(createProductWithImages);
 
   const [form, setForm] = useState<ProductCreateValues>(defaultValues);
+  const [images, setImages] = useState<LocalImage[]>([]);
 
   const [categories, setCategories] = useState<SimpleRef[]>(initialCategories);
   const [brands, setBrands] = useState<SimpleRef[]>(initialBrands);
@@ -77,7 +130,12 @@ export default function NewProductForm({
       string,
       string[] | undefined
     >;
-    const pick = (k: keyof ProductCreateValues) => errs?.[k]?.[0];
+
+    const pick = (key: keyof ProductCreateValues) => {
+      const value = errs[key];
+      return value && value.length > 0 ? value[0] : undefined;
+    };
+
     return {
       name: pick("name"),
       slug: pick("slug"),
@@ -90,7 +148,7 @@ export default function NewProductForm({
 
   function handleChange<K extends keyof ProductCreateValues>(
     key: K,
-    value: ProductCreateValues[K]
+    value: ProductCreateValues[K],
   ) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -100,31 +158,77 @@ export default function NewProductForm({
     handleChange("slug", slugify(form.name));
   }
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  // Common UploadThing helper hook for this endpoint
+  const { startUpload, isUploading } = useDocumentUploader("productImage");
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
     setFormError(null);
     setFormSuccess(null);
 
-    const payload: ProductCreateValues = {
-      ...form,
-      salePrice: (form.salePrice ?? "").toString(),
-      cost: (form.cost ?? "").toString(),
-    };
+    try {
+      // 1) Upload all local files via UploadThing
+      const files = images.map((img) => img.file);
+      const uploaded = await startUpload(files);
 
-    const res = await executeAsync(payload);
+      if (!uploaded) {
+        throw new Error("Upload failed. No response from UploadThing.");
+      }
 
-    if (res?.data?.ok) {
-      setFormSuccess(res.data.message ?? "Product created successfully");
-      const slug = res.data.product.slug;
-      setTimeout(() => {
-        router.push(`/product/${slug}`);
-      }, 500);
-    } else {
-      setFormError(
-        res?.data?.message ??
-          result?.serverError ??
-          "Failed to create product. Please try again."
-      );
+      // 2) Map uploaded results back to local image metadata
+      const imagesPayload = images.map((img, index) => {
+        const uploadedFile = uploaded[index] as UploadResult | undefined;
+        if (!uploadedFile) {
+          throw new Error("Upload failed for one of the images.");
+        }
+
+        return {
+          url: uploadedFile.url,
+          alt: img.alt,
+          isPrimary: img.isPrimary ?? false,
+        };
+      });
+
+      // 3) Call Server Action with product + image URLs
+      const payload: ProductCreateValues = {
+        ...form,
+        salePrice: (form.salePrice ?? "").toString(),
+        cost: (form.cost ?? "").toString(),
+      };
+
+      // ❌ OLD (causes error):
+      // const response = await executeAsync({
+      //   vendorId,
+      //   payload,
+      //   images: imagesPayload,
+      // });
+
+      // ✅ NEW: only send what the action schema expects
+      const response = await executeAsync({
+        payload,
+        images: imagesPayload,
+      });
+
+      const data = response?.data;
+
+      if (isSuccess(data)) {
+        setFormSuccess(data.message ?? "Product created successfully");
+        router.push(`/product/${data.product.slug}`);
+        return;
+      }
+
+      const messageFromData = extractErrorMessage(data);
+      const messageFromResult = result?.serverError;
+      const fallbackMessage =
+        "Failed to create product. Please try again.";
+
+      setFormError(messageFromData ?? messageFromResult ?? fallbackMessage);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to upload images. Please try again.";
+      setFormError(message);
     }
   }
 
@@ -149,6 +253,9 @@ export default function NewProductForm({
         }}
       />
 
+      {/* Images */}
+      <ImagesSection value={images} onChange={setImages} />
+
       <DescriptionSection form={form} onChange={handleChange} />
       <PricingInventorySection
         form={form}
@@ -161,7 +268,7 @@ export default function NewProductForm({
       <Separator />
 
       <FooterActionsBar
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || isUploading}
         formError={formError}
         formSuccess={formSuccess}
         onCancel={() => router.back()}

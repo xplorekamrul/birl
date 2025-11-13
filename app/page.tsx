@@ -1,10 +1,10 @@
 import { getHomeData } from "@/lib/home/home";
 
-import BrandRail from "../components/home/BrandRail";
-import CategoryGrid from "../components/home/CategoryGrid";
-import Hero from "../components/home/Hero";
-import ProductCarousel from "../components/home/ProductCarousel";
-import VendorCards from "../components/home/VendorCards";
+import BrandRail from "@/components/home/BrandRail";
+import CategoryGrid from "@/components/home/CategoryGrid";
+import Hero from "@/components/home/Hero";
+import ProductCarousel from "@/components/home/ProductCarousel";
+import VendorCards from "@/components/home/VendorCards";
 import { mapProductsToCardData } from "@/lib/home/mappers";
 
 export default async function HomePage() {

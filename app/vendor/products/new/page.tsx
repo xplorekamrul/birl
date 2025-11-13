@@ -13,7 +13,13 @@ export default async function VendorNewProductPage() {
     | "VENDOR"
     | undefined;
 
-  if (!session?.user || (role !== "VENDOR" && role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "DEVELOPER")) {
+  if (
+    !session?.user ||
+    (role !== "VENDOR" &&
+      role !== "ADMIN" &&
+      role !== "SUPER_ADMIN" &&
+      role !== "DEVELOPER")
+  ) {
     redirect("/login");
   }
 
