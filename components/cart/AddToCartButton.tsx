@@ -1,56 +1,90 @@
-import { prisma } from "@/lib/prisma";
-import ProductCard from "@/components/product/ProductCard";
+"use client";
 
-export const revalidate = 60;
+import { useTransition } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { addToCart } from "@/actions/cart/add-to-cart";
+import { useCartStore, CartPurchaseType } from "@/store/cart";
+import { Button } from "@/components/ui/button";
+// import { toast } from "sonner"; // uncomment if you're using a toast lib
 
-export default async function ShopPage() {
-  const items = await prisma.product.findMany({
-    where: { status: "ACTIVE", visibility: "PUBLIC" },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      basePrice: true,
-      salePrice: true,
-      shortDescription: true,
-      brand: { select: { name: true } },
-      vendor: { select: { shopName: true, shopSlug: true } },
-      images: {
-        take: 1,
-        orderBy: { sortOrder: "asc" },
-        select: { url: true },
-      },
+type AddToCartButtonProps = {
+  productId: string;
+  slug: string;
+  name: string;
+  imageUrl?: string | null;
+  vendorName?: string | null;
+  unitPrice: number;
+  purchaseType?: CartPurchaseType;
+  variantId?: string | null;
+};
+
+export function AddToCartButton({
+  productId,
+  slug,
+  name,
+  imageUrl,
+  vendorName,
+  unitPrice,
+  purchaseType = "NEW",
+  variantId = null,
+}: AddToCartButtonProps) {
+  const addItem = useCartStore((s) => s.addItem);
+  const [isPending, startTransition] = useTransition();
+
+  const { execute, status } = useAction(addToCart, {
+    // ✅ FIX: destructure { data } from the result
+    onSuccess({ data }) {
+      if (!data) return;
+
+      if (!data.ok) {
+        console.error(data.message ?? "Could not add to cart");
+        // toast.error(data.message ?? "Could not add to cart");
+        return;
+      }
+
+      // Update local cart (zustand + localStorage) for instant UI
+      addItem({
+        productId,
+        slug,
+        name,
+        imageUrl,
+        vendorName,
+        unitPrice,
+        currency: "BDT",
+        quantity: 1,
+        purchaseType,
+        variantId,
+      });
+
+      // toast.success("Added to cart");
+    },
+    onError(result) {
+      console.error(result);
+      // toast.error("Something went wrong");
     },
   });
 
-  return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
-      <h1 className="mb-4 text-xl font-semibold">Shop</h1>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {items.map((p) => {
-          const basePriceNum = Number(p.basePrice); 
-          const salePriceNum = p.salePrice != null ? Number(p.salePrice) : null;
-          const imageUrl = p.images[0]?.url ?? null;
+  const loading = isPending || status === "executing";
 
-          return (
-            <ProductCard
-              key={p.id}
-              product={{
-                id: p.id,
-                slug: p.slug,
-                name: p.name,
-                basePrice: basePriceNum,
-                salePrice: salePriceNum,
-                shortDescription: p.shortDescription ?? null,
-                brand: p.brand ?? null,
-                vendor: p.vendor ?? null, 
-                imageUrl,
-              }}
-            />
-          );
-        })}
-      </div>
-    </main>
+  function handleClick() {
+    startTransition(() => {
+      execute({
+        productId,
+        quantity: 1,
+        variantId,
+        purchaseType,
+      });
+    });
+  }
+
+  return (
+    <Button
+      type="button"
+      className="w-full bg-pcolor text-white hover:bg-pcolor/90"
+      disabled={loading}
+      onClick={handleClick}
+    >
+      {loading ? "Adding..." : "Add to cart"}
+    </Button>
   );
 }

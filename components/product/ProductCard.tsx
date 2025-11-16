@@ -17,7 +17,7 @@ export type ProductCardData = {
   salePrice?: number | null;
   shortDescription?: string | null;
   brand?: MinimalBrand | null;
-  vendor?: MinimalVendor | null; 
+  vendor?: MinimalVendor | null;
   imageUrl?: string | null;
   initialWished?: boolean;
 };
@@ -30,12 +30,14 @@ function formatBDT(value: number) {
   }).format(value || 0);
 }
 
-export default async function ProductCard({
+export default function ProductCard({
   product,
   className,
+  isAuthenticated = false,
 }: {
   product: ProductCardData;
   className?: string;
+  isAuthenticated?: boolean;
 }) {
   const base = Number(product.basePrice || 0);
   const sale = product.salePrice != null ? Number(product.salePrice) : null;
@@ -65,6 +67,7 @@ export default async function ProductCard({
               <span className="text-xs">No image</span>
             </div>
           )}
+
           {hasSale ? (
             <Badge className="absolute left-2 top-2 bg-emerald-600 text-white shadow">
               <Percent className="mr-1 h-3 w-3" />
@@ -87,6 +90,7 @@ export default async function ProductCard({
             </span>
           ) : null}
         </div>
+
         <Link
           href={`/product/${product.slug}`}
           className="line-clamp-2 text-sm font-semibold text-slate-900 hover:underline"
@@ -100,11 +104,17 @@ export default async function ProductCard({
           <span className={cn("text-base font-bold text-pcolor", hasSale && "text-emerald-700")}>
             {formatBDT(unitPrice)}
           </span>
-          {hasSale ? <span className="text-xs text-slate-500 line-through">{formatBDT(base)}</span> : null}
+          {hasSale ? (
+            <span className="text-xs text-slate-500 line-through">
+              {formatBDT(base)}
+            </span>
+          ) : null}
         </div>
 
         {product.shortDescription ? (
-          <p className="line-clamp-2 text-xs text-slate-600">{product.shortDescription}</p>
+          <p className="line-clamp-2 text-xs text-slate-600">
+            {product.shortDescription}
+          </p>
         ) : null}
 
         <ProductCardActions
@@ -115,6 +125,7 @@ export default async function ProductCard({
           vendorName={product.vendor?.shopName}
           unitPrice={unitPrice}
           initialWished={product.initialWished}
+          isAuthenticated={isAuthenticated}
         />
       </CardContent>
     </Card>

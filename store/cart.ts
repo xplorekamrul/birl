@@ -1,9 +1,18 @@
+// src/store/cart.ts
 "use client";
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type CartCurrency = "BDT";
+
+// Keep this in sync with your Prisma PurchaseType enum
+export type CartPurchaseType =
+  | "NEW"
+  | "REFURBISHED"
+  | "RENT"
+  | "HIRE_PURCHASE"
+  | "PRE_ORDER";
 
 export type CartLine = {
   key: string;
@@ -14,7 +23,7 @@ export type CartLine = {
 
   // merchandising
   vendorName?: string | null;
-  purchaseType?: "SALE" | "RENT" | "HP" | "PREORDER";
+  purchaseType?: CartPurchaseType;
   variantId?: string | null;
 
   // pricing
@@ -46,9 +55,10 @@ type CartState = {
 function lineKey(p: {
   productId: string;
   variantId?: string | null;
-  purchaseType?: string | null;
+  purchaseType?: CartPurchaseType | null;
 }) {
-  return [p.productId, p.variantId ?? "no-variant", p.purchaseType ?? "SALE"].join("|");
+  // default to "NEW" instead of "SALE" so it matches your server
+  return [p.productId, p.variantId ?? "no-variant", p.purchaseType ?? "NEW"].join("|");
 }
 
 export const useCartStore = create<CartState>()(
@@ -64,6 +74,7 @@ export const useCartStore = create<CartState>()(
       addItem: (l) => {
         const key = lineKey(l);
         const existing = get().items.find((i) => i.key === key);
+
         if (existing) {
           set({
             items: get().items.map((i) =>
@@ -86,27 +97,41 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      removeItem: (key) => set({ items: get().items.filter((i) => i.key !== key) }),
+      removeItem: (key) =>
+        set({
+          items: get().items.filter((i) => i.key !== key),
+        }),
+
       setQuantity: (key, qty) =>
         set({
           items: get().items
-            .map((i) => (i.key === key ? { ...i, quantity: Math.max(1, qty) } : i))
+            .map((i) =>
+              i.key === key ? { ...i, quantity: Math.max(1, qty) } : i
+            )
             .filter((i) => i.quantity > 0),
         }),
+
       increment: (key) =>
         set({
-          items: get().items.map((i) => (i.key === key ? { ...i, quantity: i.quantity + 1 } : i)),
+          items: get().items.map((i) =>
+            i.key === key ? { ...i, quantity: i.quantity + 1 } : i
+          ),
         }),
+
       decrement: (key) =>
         set({
           items: get().items
-            .map((i) => (i.key === key ? { ...i, quantity: i.quantity - 1 } : i))
+            .map((i) =>
+              i.key === key ? { ...i, quantity: i.quantity - 1 } : i
+            )
             .filter((i) => i.quantity > 0),
         }),
+
       clear: () => set({ items: [] }),
 
       totalQty: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
-      subtotal: () => get().items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0),
+      subtotal: () =>
+        get().items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0),
     }),
     {
       name: "birl-cart-v1", // localStorage key

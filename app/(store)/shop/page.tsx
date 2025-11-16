@@ -1,9 +1,13 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/product/ProductCard";
 
 export const revalidate = 60;
 
 export default async function ShopPage() {
+  const session = await auth();
+  const isAuthenticated = !!session?.user;
+
   const items = await prisma.product.findMany({
     where: { status: "ACTIVE", visibility: "PUBLIC" },
     orderBy: { createdAt: "desc" },
@@ -11,11 +15,11 @@ export default async function ShopPage() {
       id: true,
       slug: true,
       name: true,
-      basePrice: true,          // Decimal
-      salePrice: true,          // Decimal | null
+      basePrice: true, 
+      salePrice: true, 
       shortDescription: true,
       brand: { select: { name: true } },
-      vendor: { select: { shopName: true, shopSlug: true } }, // <- FIX: shopName
+      vendor: { select: { shopName: true, shopSlug: true } },
       images: {
         take: 1,
         orderBy: { sortOrder: "asc" },
@@ -47,6 +51,7 @@ export default async function ShopPage() {
                 vendor: p.vendor ?? null,
                 imageUrl,
               }}
+              isAuthenticated={isAuthenticated}
             />
           );
         })}

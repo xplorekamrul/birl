@@ -131,8 +131,11 @@ export default function CartPageClient() {
               </div>
 
               <div className="mt-4 grid gap-2">
-                <Button className="w-full bg-pcolor text-white hover:bg-pcolor/90">
-                  Proceed to Checkout
+                <Button
+                  className="w-full bg-pcolor text-white hover:bg-pcolor/90"
+                  asChild
+                >
+                  <Link href="/checkout">Proceed to Checkout</Link>
                 </Button>
                 <Button variant="outline" className="w-full" onClick={clear}>
                   Clear Cart

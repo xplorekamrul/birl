@@ -23,7 +23,7 @@ import {
 type SimpleRef = { id: string; name: string };
 
 type Props = {
-  vendorId: string; // you can keep this if you want, even if not used in the action
+  vendorId: string; 
   categories: SimpleRef[];
   brands: SimpleRef[];
 };
@@ -196,12 +196,7 @@ export default function NewProductForm({
         cost: (form.cost ?? "").toString(),
       };
 
-      // ❌ OLD (causes error):
-      // const response = await executeAsync({
-      //   vendorId,
-      //   payload,
-      //   images: imagesPayload,
-      // });
+      
 
       // ✅ NEW: only send what the action schema expects
       const response = await executeAsync({

@@ -1,4 +1,4 @@
-// /src/lib/auth.ts
+// /lib/auth.ts
 import "server-only";
 import type { NextAuthOptions, Session, User } from "next-auth";
 import type { JWT } from "next-auth/jwt";
@@ -11,7 +11,7 @@ type AppRole =
   | "DEVELOPER"
   | "SUPER_ADMIN"
   | "ADMIN"
-  | "USER"   
+  | "USER"
   | "VENDOR";
 
 type AppStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name ?? null,
           email: user.email,
-          role: user.role as AppRole,     
+          role: user.role as AppRole,
           status: user.status as AppStatus,
         } as User;
 
@@ -60,30 +60,24 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // --- UPDATED JWT CALLBACK ---
     async jwt({ token, user }: { token: JWT; user?: User }) {
+      // This block runs ONLY on sign-in, populating the token.
       if (user) {
-        // include all roles
         token.id = user.id;
-        token.role = user.role as AppRole;          
+        token.role = user.role as AppRole;
         token.status = user.status as AppStatus;
-      } else if (token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email },
-          select: { id: true, role: true, status: true, name: true },
-        });
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.role = dbUser.role as AppRole;      
-          token.status = dbUser.status as AppStatus;
-        }
       }
+      // The database lookup on every session check (in the `else if`)
+      // has been removed to prevent unnecessary DB hits.
       return token;
     },
+    // --- END UPDATE ---
     async session({ session, token }: { session: Session; token: JWT }) {
       if (session.user) {
         // include all roles on the session
         session.user.id = token.id as string;
-        session.user.role = token.role as AppRole;        
+        session.user.role = token.role as AppRole;
         session.user.status = token.status as AppStatus;
       }
       return session;

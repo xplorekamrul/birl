@@ -2,19 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { X, Minus, Plus, Trash2 } from "lucide-react";
+import {  Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore, formatBDT } from "@/store/cart";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
-/**
- * IMPORTANT:
- * - Do NOT return a new object from a single selector.
- * - Select each slice separately (or use shallow if you really need an object).
- * - Provide a SheetTitle to satisfy Radix a11y.
- */
+
 export default function CartDrawerClient() {
   const items = useCartStore((s) => s.items);
   const isOpen = useCartStore((s) => s.isOpen);
@@ -43,13 +38,13 @@ export default function CartDrawerClient() {
           <h3 className="text-sm font-semibold">
             Bag <span className="text-muted-foreground">({totalQty})</span>
           </h3>
-          <button
+          {/* <button
             onClick={close}
             className="inline-flex items-center justify-center rounded-md p-2 hover:bg-slate-100"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
-          </button>
+          </button> */}
         </div>
 
         {/* Items */}
