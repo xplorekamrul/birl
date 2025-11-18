@@ -36,7 +36,7 @@ export const createBrand = adminActionClient
     });
 
     return { ok: true as const, brand };
-  });
+  }); 
 
 export const updateBrand = adminActionClient
   .schema(brandSchema)

@@ -18,7 +18,7 @@ import {
 import {
   createCategory,
   updateCategory,
-  deleteCategory,
+  deleteCategory, 
 } from "@/actions/admin/catalog/category-actions";
 import { Pencil, Trash2 } from "lucide-react";
 

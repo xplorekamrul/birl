@@ -7,7 +7,7 @@ export default async function AdminCatalogPage() {
   const session = await auth();
   const role = (session?.user as any)?.role as
     | "DEVELOPER"
-    | "SUPER_ADMIN"
+    | "SUPER_ADMIN" 
     | "ADMIN"
     | "USER"
     | "VENDOR"

@@ -34,7 +34,7 @@ export const createCategory = adminActionClient
         slug: finalSlug,
         parentId: parsedInput.parentId || null,
         isActive: true,
-      },
+      }, 
     });
 
     return { ok: true as const, category };

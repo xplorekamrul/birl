@@ -86,7 +86,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur">
-      <nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
+      <nav className="mx-auto max-w-6xl flex h-14 w-full items-center justify-between px-4">
         {/* Brand + Nav */}
         <div className="flex items-center gap-3">
           <Link href="/" className="inline-flex items-center gap-2">
