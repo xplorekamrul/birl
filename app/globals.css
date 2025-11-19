@@ -110,6 +110,14 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+
+  /* for responsve */
+    --screen-sm: 640px;
+  --screen-md: 768px;
+  --screen-lg: 1024px;
+  --screen-xl: 1280px;
+  --screen-2xl: 1536px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -202,3 +210,12 @@
   cursor: grab;
   
 }
+
+@layer utilities {
+  @media (min-width: 768px) {
+    .md\:flex { display: flex !important; }
+    .md\:block { display: block !important; }
+    .md\:hidden { display: none !important; }
+  }
+}
+

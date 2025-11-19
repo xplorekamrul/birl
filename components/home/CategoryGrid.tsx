@@ -11,7 +11,7 @@ export default function CategoryGrid({ data }: { data: Category[] }) {
   if (!data?.length) return null;
 
   return (
-    <section className="space-y-4">
+    <section className="max-w-6xl mx-auto space-y-4">
       <h2 className="text-xl md:text-2xl font-semibold">Shop by Category</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
         {data.map((c) => (

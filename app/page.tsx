@@ -14,15 +14,15 @@ export default async function HomePage() {
   const dealsForCards = mapProductsToCardData(data.deals);
 
   return (
-    <main className="space-y-10">
+    <main className="max-w-6xl mx-auto space-y-10">
       <Hero data={data.offers} />
 
       <div className="space-y-10">
         <CategoryGrid data={data.categories} />
         <BrandRail data={data.brands} />
         <VendorCards data={data.vendors} />
-<ProductCarousel title="Featured" data={featuredForCards} />
-<ProductCarousel title="Deals" data={dealsForCards} />
+        <ProductCarousel title="Featured" data={featuredForCards} />
+        <ProductCarousel title="Deals" data={dealsForCards} />
       </div>
     </main>
   );

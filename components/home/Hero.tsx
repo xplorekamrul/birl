@@ -17,7 +17,11 @@ export type Offer = {
 
 export default function Hero({ data }: { data: Offer[] }) {
   if (!data?.length) return null;
+
   const primary = data[0];
+
+  // Debug print
+  console.log("HERO IMAGE:", primary.image);
 
   return (
     <section
@@ -25,13 +29,23 @@ export default function Hero({ data }: { data: Offer[] }) {
       style={{ backgroundColor: primary.backgroundColor }}
     >
       <div className="grid md:grid-cols-2 gap-6 items-center p-6 md:p-10">
+        
+        {/* TEXT */}
         <div className="space-y-4">
-          <h1 className="text-3xl md:text-5xl font-bold" style={{ color: primary.textColor }}>
+          <h1
+            className="text-3xl md:text-5xl font-bold"
+            style={{ color: primary.textColor }}
+          >
             {primary.title}
           </h1>
-          <p className="text-base md:text-lg opacity-90" style={{ color: primary.textColor }}>
+
+          <p
+            className="text-base md:text-lg opacity-90"
+            style={{ color: primary.textColor }}
+          >
             {primary.description}
           </p>
+
           <Link
             href={primary.link || "#"}
             className="inline-block rounded-xl px-5 py-3 font-medium bg-white text-black hover:opacity-90 transition"
@@ -39,15 +53,20 @@ export default function Hero({ data }: { data: Offer[] }) {
             {primary.buttonText || "Shop now"}
           </Link>
         </div>
-        {/* image */}
-        <div className="relative h-[220px] md:h-[300px] lg:h-[360px] rounded-xl overflow-hidden">
 
-          <img
-            src={primary.image}
-            alt={primary.title}
-            className="h-full w-full object-cover"
-            loading="eager"
-          />
+        {/* IMAGE */}
+        <div className="relative h-[220px] md:h-[300px] lg:h-[360px] rounded-xl overflow-hidden">
+          {primary.image ? (
+            <img
+              src={primary.image}
+              alt={primary.title}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="h-full w-full bg-gray-200 flex items-center justify-center text-gray-500">
+              No Image
+            </div>
+          )}
         </div>
       </div>
     </section>

@@ -13,7 +13,7 @@ export default function BrandRail({ data }: { data: Brand[] }) {
   if (!data?.length) return null;
 
   return (
-    <section className="space-y-4">
+    <section className="max-w-6xl mx-auto space-y-4">
       <h2 className="text-xl md:text-2xl font-semibold">Top Brands</h2>
       <div className="flex items-center gap-4 overflow-x-auto pb-2">
         {data.map((b) => (
