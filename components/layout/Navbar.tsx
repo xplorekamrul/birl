@@ -1,5 +1,6 @@
 "use client";
 
+import { searchProducts } from "@/actions/search";
 import SignOutButton from "@/components/auth/SignOutButton";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -7,9 +8,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type Role = "DEVELOPER" | "SUPER_ADMIN" | "ADMIN" | "USER" | "VENDOR";
 
+interface SearchResult {
+  id: string;
+  name: string;
+  slug: string;
+  basePrice: any;
+  salePrice: any;
+  images: { url: string }[];
+}
+
 const commonNav: { label: string; href: string }[] = [
   { label: "Home", href: "/" },
-  { label: "Shop", href: "/products" },
+  { label: "Shop", href: "/shop" },
 ];
 
 const roleNav: Record<Role, { label: string; href: string }[]> = {
@@ -21,7 +31,7 @@ const roleNav: Record<Role, { label: string; href: string }[]> = {
   ADMIN: [{ label: "Admin Panel", href: "/admin" }],
   USER: [
     { label: "My Account", href: "/user" },
-    { label: "Orders", href: "/user/orders" },
+    { label: "Orders", href: "/orders" },
     { label: "Wishlist", href: "/user/wishlist" },
   ],
   VENDOR: [
@@ -64,9 +74,34 @@ export default function Navbar() {
 
   const [open, setOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
   const menuRef = useRef<HTMLDivElement | null>(null);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Search functionality
+  useEffect(() => {
+    const debounce = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        const results = await searchProducts(searchQuery);
+        setSearchResults(results as SearchResult[]);
+        setSearchOpen(true);
+        setIsSearching(false);
+      } else {
+        setSearchResults([]);
+        setSearchOpen(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(debounce);
+  }, [searchQuery]);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -74,12 +109,15 @@ export default function Navbar() {
       if (!t) return;
       const clickedInsideMenu = !!menuRef.current?.contains(t);
       const clickedButton = !!btnRef.current?.contains(t);
+      const clickedInsideSearch = !!searchRef.current?.contains(t);
       if (!clickedInsideMenu && !clickedButton) setOpen(false);
+      if (!clickedInsideSearch) setSearchOpen(false);
     }
     function onEsc(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setOpen(false);
         setMobileMenuOpen(false);
+        setSearchOpen(false);
       }
     }
     document.addEventListener("mousedown", onDocClick);
@@ -105,16 +143,16 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur">
-      <nav className="mx-auto max-w-6xl flex h-14 w-full items-center justify-between px-4">
+      <nav className="mx-auto max-w-6xl flex h-14 w-full items-center justify-between px-4 gap-4">
         {/* Brand + Desktop Nav */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="inline-block h-6 w-6 rounded-md bg-pcolor/90" />
-            <span className="font-semibold text-hcolor">Birl Ecommerce</span>
+            <span className="font-semibold text-hcolor hidden sm:inline">Birl Ecommerce</span>
           </Link>
 
           {/* Desktop Navigation - Hidden on mobile */}
-          <ul className="hidden md:flex ml-4 items-center gap-2">
+          <ul className="hidden lg:flex ml-4 items-center gap-2">
             {items.map((it) => (
               <li key={it.href}>
                 <Link
@@ -128,8 +166,104 @@ export default function Navbar() {
           </ul>
         </div>
 
+        {/* Search Box - Desktop Only */}
+        <div className="hidden md:flex flex-1 max-w-md mx-4 relative" ref={searchRef}>
+          <div className="relative w-full">
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-9 pl-10 pr-4 rounded-md border border-border bg-background/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-pcolor/50 focus:border-pcolor"
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pcolor" />
+              </div>
+            )}
+          </div>
+
+          {/* Search Results Dropdown */}
+          {searchOpen && searchResults.length > 0 && (
+            <div className="absolute top-full mt-2 w-full bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
+              {searchResults.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.slug}`}
+                  onClick={() => {
+                    setSearchOpen(false);
+                    setSearchQuery("");
+                  }}
+                  className="flex items-center gap-3 p-3 hover:bg-muted/60 transition-colors border-b border-border last:border-b-0"
+                >
+                  {product.images[0] ? (
+                    <img
+                      src={product.images[0].url}
+                      alt={product.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                      <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+                    <p className="text-sm text-pcolor font-semibold">
+                      ${product.salePrice || product.basePrice}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {searchOpen && searchQuery.trim().length >= 2 && searchResults.length === 0 && !isSearching && (
+            <div className="absolute top-full mt-2 w-full bg-card border border-border rounded-lg shadow-lg p-4 text-center z-50">
+              <p className="text-sm text-muted-foreground">No products found</p>
+            </div>
+          )}
+        </div>
+
         {/* Right side */}
-        <div className=" ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Mobile Search Icon - Only visible on mobile */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden rounded-md p-2 hover:bg-muted/60"
+            aria-label="Search"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+
           {/* Mobile Menu Button - Only visible on mobile */}
           <button
             onClick={() => setMobileMenuOpen(true)}
@@ -137,7 +271,7 @@ export default function Navbar() {
             aria-label="Open menu"
           >
             <svg
-              className="h-6 w-6"
+              className="h-5 w-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -294,6 +428,69 @@ export default function Navbar() {
                   />
                 </svg>
               </button>
+            </div>
+
+            {/* Search in Mobile Drawer */}
+            <div className="p-4 border-b border-border">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-9 pl-10 pr-4 rounded-md border border-border bg-background/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-pcolor/50 focus:border-pcolor"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+
+              {/* Mobile Search Results */}
+              {searchResults.length > 0 && searchQuery.trim().length >= 2 && (
+                <div className="mt-2 max-h-64 overflow-y-auto space-y-2">
+                  {searchResults.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/product/${product.slug}`}
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className="flex items-center gap-3 p-2 hover:bg-muted/60 rounded-md transition-colors"
+                    >
+                      {product.images[0] ? (
+                        <img
+                          src={product.images[0].url}
+                          alt={product.name}
+                          className="w-10 h-10 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                          <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{product.name}</p>
+                        <p className="text-xs text-pcolor font-semibold">
+                          ${product.salePrice || product.basePrice}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* User Info in Drawer */}
