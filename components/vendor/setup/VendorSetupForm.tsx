@@ -14,11 +14,17 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
+import type { VendorProfile } from "@prisma/client";
 import { Building2, Globe2, MapPin, Phone, Store } from "lucide-react";
-import { VendorProfile } from "@prisma/client";
+
+// Serialized type for client component (Decimal fields converted to number)
+type SerializedVendorProfile = Omit<VendorProfile, 'commissionRate' | 'averageRating'> & {
+  commissionRate: number;
+  averageRating: number;
+};
 
 type Props = {
-  initialVendor: VendorProfile | null;
+  initialVendor: SerializedVendorProfile | null;
 };
 
 type FieldErrors = Partial<Record<keyof VendorSetupValues, string | undefined>>;

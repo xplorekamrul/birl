@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
+import VendorSetupForm from "@/components/vendor/setup/VendorSetupForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import VendorSetupForm from "@/components/vendor/setup/VendorSetupForm";
+import { redirect } from "next/navigation";
 
 export default async function VendorSetupPage() {
   const session = await auth();
@@ -32,6 +32,15 @@ export default async function VendorSetupPage() {
     where: { userId: session.user.id },
   });
 
+  // Convert Decimal to number for client component
+  const serializedVendor = vendorProfile
+    ? ({
+      ...vendorProfile,
+      commissionRate: Number(vendorProfile.commissionRate),
+      averageRating: Number(vendorProfile.averageRating),
+    } as any)
+    : null;
+
   return (
     <div className="min-h-[calc(100vh-80px)] bg-linear-to-b from-sky-50 to-sky-100/70 px-4 py-8">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -48,7 +57,7 @@ export default async function VendorSetupPage() {
           </p>
         </header>
 
-        <VendorSetupForm initialVendor={vendorProfile} />
+        <VendorSetupForm initialVendor={serializedVendor} />
       </div>
     </div>
   );
