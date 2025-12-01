@@ -3,7 +3,7 @@ import { VendorDashboardServer } from "@/components/vendor/dashboard/VendorDashb
 import { Suspense } from "react";
 
 // Enable ISR with 60 second revalidation
-export const revalidate = 60;
+
 
 
 export default function VendorDashboardPage() {

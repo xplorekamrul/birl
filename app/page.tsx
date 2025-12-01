@@ -7,6 +7,7 @@ import ProductCarousel from "@/components/home/ProductCarousel";
 import VendorCards from "@/components/home/VendorCards";
 import { mapProductsToCardData } from "@/lib/home/mappers";
 
+
 export default async function HomePage() {
   const data = await getHomeData();
 

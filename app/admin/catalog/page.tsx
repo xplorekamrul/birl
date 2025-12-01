@@ -1,13 +1,15 @@
-import { redirect } from "next/navigation";
+import CatalogPageClient from "@/components/admin/catalog/CatalogPageClient";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import CatalogPageClient from "@/components/admin/catalog/CatalogPageClient";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
 
 export default async function AdminCatalogPage() {
+  await connection();
   const session = await auth();
   const role = (session?.user as any)?.role as
     | "DEVELOPER"
-    | "SUPER_ADMIN" 
+    | "SUPER_ADMIN"
     | "ADMIN"
     | "USER"
     | "VENDOR"

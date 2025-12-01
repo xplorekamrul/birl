@@ -1,9 +1,10 @@
 // /app/layout.tsx
 import Navbar from "@/components/layout/Navbar";
 import AppProviders from "@/components/providers/AppProviders";
-import type { Metadata } from "next";
-import "./globals.css";
 import "@uploadthing/react/styles.css";
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import "./globals.css";
 
 import CartDrawer from "@/components/cart/CartDrawer";
 
@@ -16,10 +17,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-light dark:bg-background text-foreground">
         <AppProviders>
           <Navbar />
-          <main className="mx-auto w-full  px-4 py-6">
-            {children}
-            <CartDrawer />
-          </main>
+          <div className="flex items-start relative">
+            <main className="flex-1 min-w-0 px-4 py-6">
+              <div className="mx-auto w-full max-w-[1600px]">
+                <Suspense fallback={<div>Loading...</div>}>
+                  {children}
+                </Suspense>
+              </div>
+            </main>
+            <Suspense fallback={null}>
+              <CartDrawer />
+            </Suspense>
+          </div>
         </AppProviders>
       </body>
     </html>

@@ -2,8 +2,7 @@ import { OrdersLoadingSkeleton } from "@/components/vendor/orders/OrdersLoadingS
 import { VendorOrdersContent } from "@/components/vendor/orders/VendorOrdersContent";
 import { Suspense } from "react";
 
-// Enable ISR with 30 second revalidation
-export const revalidate = 30;
+
 
 export default function VendorOrdersPage() {
    return (

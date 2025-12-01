@@ -1,8 +1,10 @@
 // lib/home/home.ts
-import "server-only";
 import { prisma } from "@/lib/prisma";
+import { connection } from "next/server";
+import "server-only";
 
 export async function getHomeData() {
+  await connection();
   const now = new Date();
 
   // NOTE: include brand, vendor (VendorProfile), and first image for ProductCard
