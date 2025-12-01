@@ -1,9 +1,10 @@
 "use client";
 
 import { getVendorOrders } from "@/actions/vendor/orders/get-vendor-orders";
+import { updateOrderStatus } from "@/actions/vendor/orders/update-order-status";
 import { Download, Search } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { OrderDetailsModal } from "./OrderDetailsModal";
 
 export function VendorOrdersContent() {
    const [orders, setOrders] = useState<any[]>([]);
@@ -16,6 +17,8 @@ export function VendorOrdersContent() {
       page: 1,
    });
    const [total, setTotal] = useState(0);
+   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
    useEffect(() => {
       loadOrders();
@@ -29,6 +32,15 @@ export function VendorOrdersContent() {
          setTotal(result.data.total);
       }
       setLoading(false);
+   };
+
+   const handleStatusChange = async (orderId: string, newStatus: string) => {
+      setUpdatingStatus(orderId);
+      const result = await updateOrderStatus({ orderId, status: newStatus as any });
+      if (result?.data?.ok) {
+         setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      }
+      setUpdatingStatus(null);
    };
 
    const exportCSV = () => {
@@ -147,22 +159,32 @@ export function VendorOrdersContent() {
                               <td className="px-6 py-4 text-sm">{order.items.length}</td>
                               <td className="px-6 py-4 font-semibold">${order.vendorEarnings.toFixed(2)}</td>
                               <td className="px-6 py-4">
-                                 <span className={`px-2 py-1 text-xs rounded-full ${order.status === "DELIVERED" ? "bg-green-100 text-green-800" :
-                                       order.status === "SHIPPED" ? "bg-blue-100 text-blue-800" :
-                                          order.status === "PROCESSING" ? "bg-yellow-100 text-yellow-800" :
-                                             order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                                                "bg-gray-100 text-gray-800"
-                                    }`}>
-                                    {order.status}
-                                 </span>
+                                 <select
+                                    value={order.status}
+                                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                    disabled={updatingStatus === order.id}
+                                    className={`px-3 py-1 text-xs rounded-lg border-2 font-medium cursor-pointer ${order.status === "DELIVERED" ? "bg-green-50 text-green-800 border-green-200" :
+                                       order.status === "SHIPPED" ? "bg-blue-50 text-blue-800 border-blue-200" :
+                                          order.status === "PROCESSING" ? "bg-yellow-50 text-yellow-800 border-yellow-200" :
+                                             order.status === "CANCELLED" ? "bg-red-50 text-red-800 border-red-200" :
+                                                "bg-gray-50 text-gray-800 border-gray-200"
+                                       } ${updatingStatus === order.id ? "opacity-50" : ""}`}
+                                 >
+                                    <option value="PENDING">Pending</option>
+                                    <option value="CONFIRMED">Confirmed</option>
+                                    <option value="PROCESSING">Processing</option>
+                                    <option value="SHIPPED">Shipped</option>
+                                    <option value="DELIVERED">Delivered</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                 </select>
                               </td>
                               <td className="px-6 py-4">
-                                 <Link
-                                    href={`/vendor/orders/${order.id}`}
-                                    className="text-blue-600 hover:underline text-sm"
+                                 <button
+                                    onClick={() => setSelectedOrder(order)}
+                                    className="text-blue-600 hover:underline text-sm font-medium"
                                  >
                                     View Details
-                                 </Link>
+                                 </button>
                               </td>
                            </tr>
                         ))}
@@ -192,6 +214,13 @@ export function VendorOrdersContent() {
                   </div>
                </div>
             </>
+         )}
+
+         {selectedOrder && (
+            <OrderDetailsModal
+               order={selectedOrder}
+               onClose={() => setSelectedOrder(null)}
+            />
          )}
       </div>
    );

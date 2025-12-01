@@ -1,7 +1,7 @@
 "use client";
 
 import { getVendorOrderDetails } from "@/actions/vendor/orders/get-order-details";
-import { updateVendorOrderStatus } from "@/actions/vendor/orders/update-order-status";
+import { updateOrderStatus } from "@/actions/vendor/orders/update-order-status";
 import { ArrowLeft, CreditCard, MapPin, Package, Truck, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,7 +28,7 @@ export function VendorOrderDetails({ orderId }: { orderId: string }) {
 
    const updateStatus = async (status: any) => {
       setUpdating(true);
-      const result = await updateVendorOrderStatus({
+      const result = await updateOrderStatus({
          orderId,
          status,
          ...trackingData,

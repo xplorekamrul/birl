@@ -6,12 +6,10 @@ import { z } from "zod";
 
 const schema = z.object({
    orderId: z.string(),
-   status: z.enum(["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"]),
-   trackingNumber: z.string().optional(),
-   carrier: z.string().optional(),
+   status: z.enum(["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"]),
 });
 
-export const updateVendorOrderStatus = vendorOnlyActionClient
+export const updateOrderStatus = vendorOnlyActionClient
    .schema(schema)
    .action(async ({ parsedInput, ctx }) => {
       const userId = (ctx.session?.user as any)?.id;
@@ -25,9 +23,12 @@ export const updateVendorOrderStatus = vendorOnlyActionClient
          return { ok: false as const, error: "Vendor profile not found" };
       }
 
+      const { orderId, status } = parsedInput;
+
+      // Verify this order belongs to the vendor
       const vendorOrder = await prisma.vendorOrder.findFirst({
          where: {
-            id: parsedInput.orderId,
+            id: orderId,
             vendorId: vendor.id,
          },
       });
@@ -36,24 +37,11 @@ export const updateVendorOrderStatus = vendorOnlyActionClient
          return { ok: false as const, error: "Order not found" };
       }
 
-      const updated = await prisma.vendorOrder.update({
-         where: { id: parsedInput.orderId },
-         data: { status: parsedInput.status },
+      // Update the order status
+      await prisma.vendorOrder.update({
+         where: { id: orderId },
+         data: { status },
       });
 
-      // Create fulfillment if shipped
-      if (parsedInput.status === "SHIPPED" && (parsedInput.trackingNumber || parsedInput.carrier)) {
-         await prisma.fulfillment.create({
-            data: {
-               orderId: vendorOrder.orderId,
-               vendorOrderId: vendorOrder.id,
-               status: "SHIPPED",
-               trackingNumber: parsedInput.trackingNumber,
-               carrier: parsedInput.carrier,
-               shippedAt: new Date(),
-            },
-         });
-      }
-
-      return { ok: true as const, order: updated };
+      return { ok: true as const };
    });

@@ -5,7 +5,7 @@ import { vendorOnlyActionClient } from "@/lib/safe-action/clients";
 import { z } from "zod";
 
 const schema = z.object({
-   status: z.enum(["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"]).optional(),
+   status: z.string().optional(),
    startDate: z.string().optional(),
    endDate: z.string().optional(),
    search: z.string().optional(),
