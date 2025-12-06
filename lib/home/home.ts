@@ -1,10 +1,13 @@
 // lib/home/home.ts
 import { prisma } from "@/lib/prisma";
-import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 import "server-only";
 
 export async function getHomeData() {
-  await connection();
+  "use cache";
+  cacheLife("hours");
+  cacheTag("home-data");
+
   const now = new Date();
 
   // NOTE: include brand, vendor (VendorProfile), and first image for ProductCard
@@ -62,5 +65,29 @@ export async function getHomeData() {
     ]);
   // --- END UPDATE ---
 
-  return { offers, categories, brands, featuredProducts, deals, vendors };
+  // Serialize Decimal types to numbers for client component compatibility
+  return {
+    offers,
+    categories,
+    brands,
+    featuredProducts: featuredProducts.map((p) => ({
+      ...p,
+      basePrice: Number(p.basePrice),
+      salePrice: p.salePrice ? Number(p.salePrice) : null,
+      cost: p.cost ? Number(p.cost) : null,
+      averageRating: p.averageRating ? Number(p.averageRating) : 0,
+    })),
+    deals: deals.map((p) => ({
+      ...p,
+      basePrice: Number(p.basePrice),
+      salePrice: p.salePrice ? Number(p.salePrice) : null,
+      cost: p.cost ? Number(p.cost) : null,
+      averageRating: p.averageRating ? Number(p.averageRating) : 0,
+    })),
+    vendors: vendors.map((v) => ({
+      ...v,
+      averageRating: Number(v.averageRating ?? 0),
+      totalOrders: Number(v.totalOrders ?? 0),
+    })),
+  };
 }
