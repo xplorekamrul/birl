@@ -1,4 +1,5 @@
-export default async function CartDrawer() {
-  const CartDrawerClient = (await import("./CartDrawerClient")).default;
+import CartDrawerClient from "./CartDrawerClient";
+
+export default function CartDrawer() {
   return <CartDrawerClient />;
 }

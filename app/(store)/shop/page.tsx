@@ -1,8 +1,8 @@
+import ProductCard from "@/components/product/ProductCard";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import ProductCard from "@/components/product/ProductCard";
 
-export const revalidate = 60;
+
 
 export default async function ShopPage() {
   const session = await auth();
@@ -15,8 +15,8 @@ export default async function ShopPage() {
       id: true,
       slug: true,
       name: true,
-      basePrice: true, 
-      salePrice: true, 
+      basePrice: true,
+      salePrice: true,
       shortDescription: true,
       brand: { select: { name: true } },
       vendor: { select: { shopName: true, shopSlug: true } },

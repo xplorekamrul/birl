@@ -3,11 +3,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { userActionClient } from "@/lib/safe-action/clients";
-import { randomBytes } from "crypto";
 import {
   CheckoutFormSchema,
   CheckoutFormValues,
 } from "@/lib/validations/checkout";
+import { randomBytes } from "crypto";
 
 export const placeOrder = userActionClient
   .schema(CheckoutFormSchema)
@@ -44,7 +44,7 @@ export const placeOrder = userActionClient
             phone,
           },
         })
-        .catch(() => {});
+        .catch(() => { });
     } else {
       // Guest: find or create by email
       const existingByEmail = await prisma.user.findUnique({
@@ -98,7 +98,7 @@ export const placeOrder = userActionClient
         },
         data: { isDefault: false },
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // 3) Validate products & compute totals
     const productIds = Array.from(new Set(items.map((i) => i.productId)));
@@ -118,25 +118,42 @@ export const placeOrder = userActionClient
         basePrice: true,
         salePrice: true,
         status: true,
+        vendorId: true, // Fetch vendorId
       },
     });
 
     const variants = variantIds.length
       ? await prisma.productVariant.findMany({
-          where: { id: { in: variantIds }, isActive: true },
-          select: {
-            id: true,
-            productId: true,
-            price: true,
-            salePrice: true,
-          },
-        })
+        where: { id: { in: variantIds }, isActive: true },
+        select: {
+          id: true,
+          productId: true,
+          price: true,
+          salePrice: true,
+          vendorId: true, // Fetch vendorId from variant as well (though usually same as product)
+        },
+      })
       : [];
 
     const productMap = new Map(products.map((p) => [p.id, p]));
     const variantMap = new Map(variants.map((v) => [v.id, v]));
 
+    // Collect all unique vendor IDs
+    const vendorIds = new Set<string>();
+    products.forEach(p => vendorIds.add(p.vendorId));
+    // Variants might override vendor? Assuming product.vendorId is the source of truth for now unless multi-vendor variants exist (unlikely model)
+
+    // Fetch vendor profiles for commission rates
+    const vendorProfiles = await prisma.vendorProfile.findMany({
+      where: { id: { in: Array.from(vendorIds) } },
+      select: { id: true, commissionRate: true },
+    });
+    const vendorMap = new Map(vendorProfiles.map(v => [v.id, v]));
+
     let subtotalNumber = 0;
+
+    // Prepare items with vendor info for grouping later
+    const preparedItems: any[] = [];
 
     const orderItemsData = items.map((item) => {
       const product = productMap.get(item.productId);
@@ -148,6 +165,7 @@ export const placeOrder = userActionClient
       }
 
       let unitPriceNumber = Number(product.salePrice ?? product.basePrice);
+      let itemVendorId = product.vendorId;
 
       if (item.variantId) {
         const variant = variantMap.get(item.variantId);
@@ -158,12 +176,22 @@ export const placeOrder = userActionClient
           variant.salePrice != null
             ? Number(variant.salePrice)
             : variant.price != null
-            ? Number(variant.price)
-            : unitPriceNumber;
+              ? Number(variant.price)
+              : unitPriceNumber;
+
+        // If variant has specific vendor (e.g. dropshipping?), use it. Otherwise keep product vendor.
+        if (variant.vendorId) itemVendorId = variant.vendorId;
       }
 
       const lineTotal = unitPriceNumber * item.quantity;
       subtotalNumber += lineTotal;
+
+      preparedItems.push({
+        ...item,
+        vendorId: itemVendorId,
+        pricePerUnit: unitPriceNumber,
+        totalPrice: lineTotal
+      });
 
       return {
         productId: item.productId,
@@ -211,7 +239,62 @@ export const placeOrder = userActionClient
           create: orderItemsData,
         },
       },
+      include: {
+        items: true, // Include created items to get their IDs
+      }
     });
+
+    // 4.5) Create Vendor Orders
+    // Group prepared items by vendor
+    const itemsByVendor = new Map<string, typeof preparedItems>();
+
+    // We need to map the created OrderItems back to our prepared items to link them
+    // This is a bit tricky since we don't have a direct 1:1 link ID. 
+    // But order of creation in `items: { create: [...] }` is usually preserved or we can match by product/variant.
+    // Safer approach: Iterate through created `order.items` and match with `preparedItems`.
+
+    for (const createdItem of order.items) {
+      // Find matching prepared item (simple match by product/variant)
+      const match = preparedItems.find(p =>
+        p.productId === createdItem.productId &&
+        p.variantId === createdItem.variantId &&
+        p.quantity === createdItem.quantity // extra safety
+      );
+
+      if (match) {
+        const vid = match.vendorId;
+        if (!itemsByVendor.has(vid)) itemsByVendor.set(vid, []);
+        itemsByVendor.get(vid)?.push({ ...match, orderItemId: createdItem.id });
+      }
+    }
+
+    // Create VendorOrder for each vendor
+    for (const [vendorId, vendorItems] of itemsByVendor.entries()) {
+      const vendorProfile = vendorMap.get(vendorId);
+      const commissionRate = Number(vendorProfile?.commissionRate ?? 0.15);
+
+      const vendorSubtotal = vendorItems.reduce((sum: number, item: any) => sum + item.totalPrice, 0);
+      const commission = vendorSubtotal * commissionRate;
+      const vendorEarnings = vendorSubtotal - commission;
+
+      const vendorOrder = await prisma.vendorOrder.create({
+        data: {
+          orderId: order.id,
+          vendorId: vendorId,
+          status: "PENDING",
+          subtotal: vendorSubtotal,
+          commission: commission,
+          vendorEarnings: vendorEarnings,
+        }
+      });
+
+      // Link OrderItems to this VendorOrder
+      const orderItemIds = vendorItems.map((i: any) => i.orderItemId);
+      await prisma.orderItem.updateMany({
+        where: { id: { in: orderItemIds } },
+        data: { vendorOrderId: vendorOrder.id }
+      });
+    }
 
     // 5) Clear DB cart for logged-in users (if any)
     if (sessionUserId) {

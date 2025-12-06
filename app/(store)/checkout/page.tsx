@@ -1,9 +1,9 @@
 // src/app/(store)/checkout/page.tsx
-import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import CheckoutPageClient from "@/components/checkout/CheckoutPageClient";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-export const revalidate = 0;
+
 
 export default async function CheckoutPage() {
   const session = await auth();
@@ -17,15 +17,15 @@ export default async function CheckoutPage() {
 
   let initialAddress:
     | {
-        fullName: string | null;
-        phone: string | null;
-        email: string | null;
-        street: string | null;
-        city: string | null;
-        state: string | null;
-        postalCode: string | null;
-        country: string | null;
-      }
+      fullName: string | null;
+      phone: string | null;
+      email: string | null;
+      street: string | null;
+      city: string | null;
+      state: string | null;
+      postalCode: string | null;
+      country: string | null;
+    }
     | null = null;
 
   if (userId) {
