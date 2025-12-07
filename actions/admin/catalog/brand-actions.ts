@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { adminActionClient } from "@/lib/safe-action/clients";
-import { brandSchema } from "@/lib/validations/catalog";
 import { slugify } from "@/lib/slugify";
+import { brandSchema } from "@/lib/validations/catalog";
+import { revalidateTag } from "next/cache";
 
 async function ensureUniqueBrandSlug(base: string, idToExclude?: string) {
   let slug = base;
@@ -32,11 +33,13 @@ export const createBrand = adminActionClient
       data: {
         name: parsedInput.name,
         slug: finalSlug,
+        logoUrl: parsedInput.logoUrl || null,
       },
     });
 
+    revalidateTag("admin-catalog", "max");
     return { ok: true as const, brand };
-  }); 
+  });
 
 export const updateBrand = adminActionClient
   .schema(brandSchema)
@@ -53,9 +56,11 @@ export const updateBrand = adminActionClient
       data: {
         name: parsedInput.name,
         slug: finalSlug,
+        logoUrl: parsedInput.logoUrl || null,
       },
     });
 
+    revalidateTag("admin-catalog", "max");
     return { ok: true as const, brand };
   });
 
@@ -69,5 +74,7 @@ export const deleteBrand = adminActionClient
     await prisma.brand.delete({
       where: { id: parsedInput.id! },
     });
+
+    revalidateTag("admin-catalog", "max");
     return { ok: true as const };
   });

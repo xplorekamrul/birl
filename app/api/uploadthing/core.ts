@@ -1,31 +1,37 @@
+import { auth } from "@/lib/auth";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 
 const f = createUploadthing();
 
 export const ourFileRouter = {
-  // Endpoint: "productImage"
-  productImage: f({
-    image: { maxFileSize: "4MB", maxFileCount: 10 },
-  })
+  productImage: f({ image: { maxFileSize: "4MB", maxFileCount: 10 } })
     .middleware(async () => {
-      // TODO: plug in real auth/session if needed
-      // const session = await auth();
-      // if (!session) throw new Error("Unauthorized");
-
-      return {
-        userId: "demo-user-id", // replace with real user id
-      };
+      const session = await auth();
+      if (!session?.user) throw new Error("Unauthorized");
+      return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // This runs on UploadThing infra (not in your Next.js process)
-      console.log("Upload complete:", {
-        userId: metadata.userId,
-        url: file.url,
-        key: file.key,
-        name: file.name,
-      });
+      return { url: file.url };
+    }),
 
-      // Optional: you could notify your app, webhook, etc.
+  categoryImage: f({ image: { maxFileSize: "2MB", maxFileCount: 1 } })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session?.user) throw new Error("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { url: file.url };
+    }),
+
+  brandLogo: f({ image: { maxFileSize: "2MB", maxFileCount: 1 } })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session?.user) throw new Error("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { url: file.url };
     }),
 } satisfies FileRouter;
 
