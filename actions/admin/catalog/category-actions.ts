@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { adminActionClient } from "@/lib/safe-action/clients";
-import { categorySchema } from "@/lib/validations/catalog";
 import { slugify } from "@/lib/slugify";
+import { categorySchema } from "@/lib/validations/catalog";
+import { revalidateTag } from "next/cache";
 
 async function ensureUniqueCategorySlug(base: string, idToExclude?: string) {
   let slug = base;
@@ -32,11 +33,15 @@ export const createCategory = adminActionClient
       data: {
         name: parsedInput.name,
         slug: finalSlug,
+        description: parsedInput.description || null,
+        image: parsedInput.image || null,
         parentId: parsedInput.parentId || null,
-        isActive: true,
-      }, 
+        isActive: parsedInput.isActive ?? true,
+        displayOrder: parsedInput.displayOrder ?? 0,
+      },
     });
 
+    revalidateTag("admin-catalog", "max");
     return { ok: true as const, category };
   });
 
@@ -55,10 +60,15 @@ export const updateCategory = adminActionClient
       data: {
         name: parsedInput.name,
         slug: finalSlug,
+        description: parsedInput.description || null,
+        image: parsedInput.image || null,
         parentId: parsedInput.parentId || null,
+        isActive: parsedInput.isActive ?? true,
+        displayOrder: parsedInput.displayOrder ?? 0,
       },
     });
 
+    revalidateTag("admin-catalog", "max");
     return { ok: true as const, category };
   });
 
@@ -72,5 +82,7 @@ export const deleteCategory = adminActionClient
     await prisma.category.delete({
       where: { id: parsedInput.id! },
     });
+
+    revalidateTag("admin-catalog", "max");
     return { ok: true as const };
   });

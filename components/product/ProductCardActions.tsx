@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { ShoppingCart, Heart, Check } from "lucide-react";
+import { addToCart } from "@/actions/cart/add-to-cart";
+import { toggleWishlist } from "@/actions/wishlist";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useCartStore, CartPurchaseType } from "@/store/cart";
+import { CartPurchaseType, useCartStore } from "@/store/cart";
+import { useWishlistStore } from "@/store/wishlist";
+import { Heart, ShoppingCart } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { addToCart } from "@/actions/cart/add-to-cart";
+import { useEffect, useState, useTransition } from "react";
 
 type Props = {
   productId: string;
@@ -20,7 +22,7 @@ type Props = {
   purchaseType?: CartPurchaseType;
   initialWished?: boolean;
 
-  // ✅ new: tells us if we should also hit DB
+  //  new: tells us if we should also hit DB
   isAuthenticated?: boolean;
 };
 
@@ -37,12 +39,34 @@ export default function ProductCardActions({
   initialWished,
   isAuthenticated = false,
 }: Props) {
-  const [wishLocal, setWishLocal] = useState<boolean>(!!initialWished);
+  const [wishLoading, setWishLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const add = useCartStore((s) => s.addItem);
   const open = useCartStore((s) => s.open);
 
+  const wishlistStore = useWishlistStore();
+  const storeIsInWishlist = wishlistStore.isInWishlist(productId);
+
+  //  Hydration-safe flag: first render uses server value (initialWished)
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  //  Effective source of truth for render:
+  // - During SSR + first client render: use initialWished (matches HTML)
+  // - After mount: use Zustand store
+  const isInWishlist = isClient ? storeIsInWishlist : !!initialWished;
+
   const [isPending, startTransition] = useTransition();
+
+  //  After mount, keep store in sync with server-provided initialWished
+  useEffect(() => {
+    if (!isClient) return;
+    if (initialWished && !storeIsInWishlist) {
+      wishlistStore.addItem(productId);
+    }
+  }, [isClient, initialWished, productId, storeIsInWishlist, wishlistStore]);
 
   const { execute, status } = useAction(addToCart, {
     onSuccess({ data }) {
@@ -53,9 +77,6 @@ export default function ProductCardActions({
         // toast.error(data.message ?? "Could not add to cart");
         return;
       }
-
-      // On success, we already added locally (see below), so no need to add again if you don't want duplicates.
-      // If you prefer to add only after DB success, move add(...) here instead of in onClick.
     },
     onError(err) {
       console.error(err);
@@ -66,7 +87,7 @@ export default function ProductCardActions({
   const loading = isAuthenticated && (isPending || status === "executing");
 
   function handleAddToCart() {
-    // ✅ Always update local cart & open drawer (guest or logged-in)
+    //  Always update local cart & open drawer (guest or logged-in)
     add({
       productId,
       slug,
@@ -81,7 +102,7 @@ export default function ProductCardActions({
     });
     open();
 
-    // ✅ Only logged-in users hit DB
+    //  Only logged-in users hit DB
     if (!isAuthenticated) return;
 
     startTransition(() => {
@@ -92,6 +113,45 @@ export default function ProductCardActions({
         purchaseType,
       });
     });
+  }
+
+  async function handleWishlistToggle() {
+    setWishLoading(true);
+
+    const prevIsInWishlist = isInWishlist;
+
+    try {
+      // Toggle in local store first (instant UI feedback)
+      if (prevIsInWishlist) {
+        wishlistStore.removeItem(productId);
+      } else {
+        wishlistStore.addItem(productId);
+      }
+
+      // If authenticated, also sync with database
+      if (isAuthenticated) {
+        const result = await toggleWishlist(productId);
+        if (!result.ok) {
+          // Revert on error
+          if (prevIsInWishlist) {
+            wishlistStore.addItem(productId);
+          } else {
+            wishlistStore.removeItem(productId);
+          }
+          console.error(result.message);
+        }
+      }
+    } catch (error) {
+      console.error("Wishlist error:", error);
+      // Revert on error
+      if (prevIsInWishlist) {
+        wishlistStore.addItem(productId);
+      } else {
+        wishlistStore.removeItem(productId);
+      }
+    } finally {
+      setWishLoading(false);
+    }
   }
 
   return (
@@ -110,13 +170,15 @@ export default function ProductCardActions({
         size="icon"
         variant="outline"
         className={cn(
-          "border-slate-300",
-          wishLocal && "border-rose-300 bg-rose-50 text-rose-600"
+          "border-slate-300 transition-colors",
+          isInWishlist &&
+            "border-rose-500 bg-rose-50 text-rose-600 hover:bg-rose-100"
         )}
-        onClick={() => setWishLocal((w) => !w)}
+        onClick={handleWishlistToggle}
+        disabled={wishLoading}
         aria-label="Toggle wishlist"
       >
-        {wishLocal ? <Check className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
+        <Heart className={cn("h-4 w-4", isInWishlist && "fill-current")} />
       </Button>
     </div>
   );

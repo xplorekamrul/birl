@@ -15,10 +15,21 @@ export type Offer = {
   endDate: string | Date;
 };
 
-export default function Hero({ data }: { data: Offer[] }) {
-  if (!data?.length) return null;
+const defaultOffer: Offer = {
+  id: "default",
+  title: "Welcome to Birl Ecommerce",
+  description: "Discover amazing products from trusted vendors. Shop now and enjoy great deals!",
+  image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=600&fit=crop",
+  buttonText: "Shop Now",
+  link: "/shop",
+  backgroundColor: "#6366f1",
+  textColor: "#ffffff",
+  startDate: new Date(),
+  endDate: new Date(),
+};
 
-  const primary = data[0];
+export default function Hero({ data }: { data: Offer[] }) {
+  const primary = data?.length ? data[0] : defaultOffer;
 
   // Debug print
   console.log("HERO IMAGE:", primary.image);
@@ -29,7 +40,7 @@ export default function Hero({ data }: { data: Offer[] }) {
       style={{ backgroundColor: primary.backgroundColor }}
     >
       <div className="grid md:grid-cols-2 gap-6 items-center p-6 md:p-10">
-        
+
         {/* TEXT */}
         <div className="space-y-4">
           <h1

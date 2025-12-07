@@ -1,11 +1,40 @@
 import CatalogPageClient from "@/components/admin/catalog/CatalogPageClient";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { cacheLife, cacheTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+
+// Separate cached data fetching function
+async function getCatalogData() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("admin-catalog");
+
+  const [categories, brands] = await Promise.all([
+    prisma.category.findMany({
+      orderBy: { displayOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        image: true,
+        parentId: true,
+        isActive: true,
+        displayOrder: true,
+      },
+    }),
+    prisma.brand.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, slug: true, logoUrl: true },
+    }),
+  ]);
+
+  return { categories, brands };
+}
 
 export default async function AdminCatalogPage() {
-  await connection();
+  // Auth check happens outside cache scope
   const session = await auth();
   const role = (session?.user as any)?.role as
     | "DEVELOPER"
@@ -19,16 +48,8 @@ export default async function AdminCatalogPage() {
     redirect("/login");
   }
 
-  const [categories, brands] = await Promise.all([
-    prisma.category.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true },
-    }),
-    prisma.brand.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true },
-    }),
-  ]);
+  // Fetch cached data
+  const { categories, brands } = await getCatalogData();
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-linear-to-b from-sky-50 to-sky-100/70 px-4 py-8">
