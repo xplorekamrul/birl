@@ -30,6 +30,12 @@ export type ProductWithRelations = Prisma.ProductGetPayload<{
    include: typeof productInclude;
 }>;
 
+export type SerializedProduct = Omit<ProductWithRelations, 'basePrice' | 'salePrice' | 'cost'> & {
+   basePrice: number;
+   salePrice: number | null;
+   cost: number;
+};
+
 export default async function ProductPage({ params }: PageProps) {
    "use cache";
    cacheLife("hours");

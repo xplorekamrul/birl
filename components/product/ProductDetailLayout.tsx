@@ -1,7 +1,7 @@
 "use client";
 
 import { toggleWishlist } from "@/actions/wishlist";
-import type { ProductWithRelations } from "@/app/product/[slug]/page";
+import type { SerializedProduct } from "@/app/product/[slug]/page";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 type Props = {
-  product: ProductWithRelations;
+  product: SerializedProduct;
   isAuthenticated?: boolean;
 };
 
@@ -38,7 +38,7 @@ function formatPrice(value: unknown, currency: "BDT" | "USD" | "EUR" = "BDT") {
   })}`;
 }
 
-function getStatusBadge(status: ProductWithRelations["status"]) {
+function getStatusBadge(status: SerializedProduct["status"]) {
   switch (status) {
     case "ACTIVE":
       return (
