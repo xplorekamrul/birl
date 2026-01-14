@@ -1,20 +1,29 @@
-import type { ProductWithRelations } from "@/app/product/[slug]/page";
+"use client";
+
+import { toggleWishlist } from "@/actions/wishlist";
+import type { SerializedProduct } from "@/app/product/[slug]/page";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { useWishlistStore } from "@/store/wishlist";
+import Image from "next/image";
+import { MouseEvent, useState } from "react";
 
 import {
-  Star,
-  ShoppingCart,
+  Heart,
   ShieldCheck,
-  Truck,
+  Star,
   Store,
   Tag,
+  Truck,
 } from "lucide-react";
 
 type Props = {
-  product: ProductWithRelations;
+  product: SerializedProduct;
+  isAuthenticated?: boolean;
 };
 
 function formatPrice(value: unknown, currency: "BDT" | "USD" | "EUR" = "BDT") {
@@ -29,7 +38,7 @@ function formatPrice(value: unknown, currency: "BDT" | "USD" | "EUR" = "BDT") {
   })}`;
 }
 
-function getStatusBadge(status: ProductWithRelations["status"]) {
+function getStatusBadge(status: SerializedProduct["status"]) {
   switch (status) {
     case "ACTIVE":
       return (
@@ -60,21 +69,74 @@ function getStatusBadge(status: ProductWithRelations["status"]) {
   }
 }
 
-export default function ProductDetailLayout({ product }: Props) {
+export default function ProductDetailLayout({ product, isAuthenticated = false }: Props) {
   const hasSale = product.salePrice != null;
   const showPrice = hasSale ? product.salePrice : product.basePrice;
 
-  const mainImage =
+  const mainImageDefault =
     product.images.find((img) => img.sortOrder === 0) ??
     product.images[0] ??
     null;
 
+  const [selectedImage, setSelectedImage] = useState(mainImageDefault);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  const [wishLoading, setWishLoading] = useState(false);
+
+  const wishlistStore = useWishlistStore();
+  const isInWishlist = wishlistStore.isInWishlist(product.id);
+
   const otherImages = product.images.filter(
-    (img) => !mainImage || img.id !== mainImage.id
+    (img) => !selectedImage || img.id !== selectedImage.id
   );
 
   const rating = product.averageRating;
   const totalReviews = product.totalReviews;
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPosition({ x, y });
+  };
+
+  async function handleWishlistToggle() {
+    setWishLoading(true);
+    const prevIsInWishlist = isInWishlist;
+
+    try {
+      // Toggle in local store first (instant UI feedback)
+      if (prevIsInWishlist) {
+        wishlistStore.removeItem(product.id);
+      } else {
+        wishlistStore.addItem(product.id);
+      }
+
+      // If authenticated, also sync with database
+      if (isAuthenticated) {
+        const result = await toggleWishlist(product.id);
+        if (!result.ok) {
+          // Revert on error
+          if (prevIsInWishlist) {
+            wishlistStore.addItem(product.id);
+          } else {
+            wishlistStore.removeItem(product.id);
+          }
+          console.error(result.message);
+        }
+      }
+    } catch (error) {
+      console.error("Wishlist error:", error);
+      // Revert on error
+      if (prevIsInWishlist) {
+        wishlistStore.addItem(product.id);
+      } else {
+        wishlistStore.removeItem(product.id);
+      }
+    } finally {
+      setWishLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -160,13 +222,32 @@ export default function ProductDetailLayout({ product }: Props) {
         <section className="space-y-3">
           <Card className="overflow-hidden border border-slate-200/70 bg-white/80">
             <CardContent className="p-4">
-              {mainImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={mainImage.url}
-                  alt={mainImage.alt ?? product.name}
-                  className="mx-auto aspect-square w-full max-w-md rounded-lg object-cover bg-slate-100"
-                />
+              {selectedImage ? (
+                <div
+                  className="relative mx-auto aspect-square w-full max-w-md rounded-lg overflow-hidden bg-slate-100 cursor-zoom-in"
+                  onMouseEnter={() => setIsZoomed(true)}
+                  onMouseLeave={() => setIsZoomed(false)}
+                  onMouseMove={handleMouseMove}
+                >
+                  <Image
+                    src={selectedImage.url}
+                    alt={selectedImage.alt ?? product.name}
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className={cn(
+                      "object-cover transition-transform duration-200",
+                      isZoomed && "scale-150"
+                    )}
+                    style={
+                      isZoomed
+                        ? {
+                          transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                        }
+                        : undefined
+                    }
+                  />
+                </div>
               ) : (
                 <div className="flex aspect-square w-full max-w-md items-center justify-center rounded-lg bg-slate-100 text-slate-400 mx-auto">
                   No image
@@ -181,14 +262,21 @@ export default function ProductDetailLayout({ product }: Props) {
                 <button
                   key={img.id}
                   type="button"
-                  className="relative overflow-hidden rounded-md border border-slate-200 bg-white/70 hover:border-pcolor/40"
+                  onClick={() => setSelectedImage(img)}
+                  className={cn(
+                    "relative overflow-hidden rounded-md border bg-white/70 hover:border-pcolor/40 transition-all aspect-square",
+                    selectedImage?.id === img.id
+                      ? "border-pcolor ring-2 ring-pcolor/20"
+                      : "border-slate-200"
+                  )}
                 >
-                  {/* In future you can set mainImage on click with client state */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={img.url}
                     alt={img.alt ?? product.name}
-                    className="aspect-square w-full object-cover"
+                    fill
+                    loading="lazy"
+                    sizes="(max-width: 768px) 25vw, 12vw"
+                    className="object-cover"
                   />
                 </button>
               ))}
@@ -238,16 +326,34 @@ export default function ProductDetailLayout({ product }: Props) {
                 </div>
               </div>
 
-              {/* CTA */}
+              {/* CTA - Add to Cart & Wishlist */}
               <div className="space-y-2 pt-1">
-                <Button
-                  type="button"
-                  className="inline-flex w-full items-center justify-center gap-2 bg-pcolor text-white hover:bg-pcolor/90"
-                  // TODO: hook up add-to-cart action
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  Add to cart
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <AddToCartButton
+                      productId={product.id}
+                      slug={product.slug}
+                      name={product.name}
+                      imageUrl={selectedImage?.url ?? product.images[0]?.url}
+                      vendorName={product.vendor.shopName}
+                      unitPrice={Number(showPrice)}
+                    />
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className={cn(
+                      "border-slate-300 transition-colors h-10 w-10",
+                      isInWishlist &&
+                      "border-rose-500 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-600"
+                    )}
+                    onClick={handleWishlistToggle}
+                    disabled={wishLoading}
+                    aria-label="Toggle wishlist"
+                  >
+                    <Heart className={cn("h-4 w-4", isInWishlist && "fill-current")} />
+                  </Button>
+                </div>
                 <p className="text-[11px] text-slate-500 text-center">
                   Taxes & shipping calculated at checkout.
                 </p>
