@@ -145,14 +145,14 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur">
       <nav className="mx-auto max-w-6xl flex h-14 w-full items-center justify-between px-4 gap-4">
         {/* Brand + Desktop Nav */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="inline-block h-6 w-6 rounded-md bg-pcolor/90" />
             <span className="font-semibold text-hcolor hidden sm:inline">Birl Ecommerce</span>
           </Link>
 
           {/* Desktop Navigation - Hidden on mobile */}
-          <ul className="hidden lg:flex ml-4 items-center gap-2">
+          <ul className="hidden md:flex ml-4 items-center gap-2">
             {items.map((it) => (
               <li key={it.href}>
                 <Link
@@ -242,7 +242,7 @@ export default function Navbar() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Mobile Search Icon - Only visible on mobile */}
           <button
             onClick={() => setMobileMenuOpen(true)}

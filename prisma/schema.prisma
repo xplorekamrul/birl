@@ -935,3 +935,25 @@ model SystemSetting {
   value     Json
   updatedAt DateTime @updatedAt @map("updated_at")
 }
+
+
+// ===================== Business Info =====================
+model BusinessInfo {
+  id        String   @id @default(cuid())
+  name      String
+  logoSrc   String
+  logoAlt   String?
+  bannerSrc String?
+  bannerAlt String?
+  businessHours String?
+  address   Json?
+  phone     Json?
+  email     Json?
+  website   String?
+  facebook  String?
+  twitter   String?
+  instagram String?
+  youtube   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}

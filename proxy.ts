@@ -50,6 +50,8 @@ export default async function proxy(req: NextRequest) {
     "/",
     "/login",
     "/register",
+    "/user/register",
+    "/vendor/register",
     "/api/auth",
     "/favicon.ico",
     "/_next",
