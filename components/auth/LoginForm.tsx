@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useAction } from "next-safe-action/hooks";
-import { signIn } from "next-auth/react";
-import { Eye, EyeOff } from "lucide-react";
 import { login } from "@/actions/auth/login";
 import type { LoginValues } from "@/lib/validations/auth";
+import { Eye, EyeOff } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 export default function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
-  const router = useRouter();
   const [form, setForm] = useState<LoginValues>({ email: "", password: "" });
   const [showPw, setShowPw] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,7 +48,7 @@ export default function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string 
     }
 
     // success
-    router.push(callbackUrl);
+    window.location.href = callbackUrl;
   };
 
   return (
@@ -164,9 +162,9 @@ export default function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string 
 
       <p className="text-sm text-center text-muted-foreground">
         No account?{" "}
-        <a href="/register" className="underline decoration-dotted text-linkcolor hover:text-hcolor">
+        <Link href={`/register${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`} className="underline decoration-dotted text-linkcolor hover:text-hcolor">
           Register
-        </a>
+        </Link>
       </p>
     </form>
   );

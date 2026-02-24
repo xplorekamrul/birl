@@ -10,6 +10,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "www.bing.com",
       },
+      {
+        protocol: "https",
+        hostname: "png.pngtree.com",
+      },
     ],
   },
   cacheComponents: true,

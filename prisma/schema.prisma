@@ -143,7 +143,7 @@ model User {
   name     String
   email    String        @unique
   password String
-  role     Role          @default(ADMIN)
+  role     Role          @default(USER)
   status   AccountStatus @default(ACTIVE)
 
   phone                String?
@@ -199,8 +199,6 @@ model PasswordResetOtp {
 
   @@index([email, createdAt])
 }
-
-
 
 model Address {
   id         String      @id @default(cuid())
@@ -879,7 +877,7 @@ model ReturnItem {
   @@unique([returnId, orderItemId])
 }
 
-// ===================== PAYOUTS =====================
+// =====================Vendor PAYOUTS =====================
 model Payout {
   id       String        @id @default(cuid())
   vendorId String        @map("vendor_id")

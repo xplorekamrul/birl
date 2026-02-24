@@ -2,12 +2,15 @@
 import CheckoutPageClient from "@/components/checkout/CheckoutPageClient";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-
+import { redirect } from "next/navigation";
 
 export default async function CheckoutPage() {
   const session = await auth();
   const userId = (session?.user as any)?.id as string | undefined;
+
+  if (!userId) {
+    redirect("/login?callbackUrl=/checkout");
+  }
 
   let initialUser: {
     name: string | null;

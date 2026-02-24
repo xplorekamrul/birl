@@ -1,49 +1,25 @@
-"use client";
-
+import { getSuperAdminDashboardData } from "@/actions/admin/dashboard-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSession } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { useEffect, useState } from "react";
+import { RecentActivityClient } from "./RecentActivityClient";
 
-const stats = [
-   { label: "Total Users", value: "0", icon: "👥", color: "text-blue-500" },
-   { label: "Total Orders", value: "0", icon: "📦", color: "text-green-500" },
-   { label: "Total Revenue", value: "$0", icon: "💰", color: "text-yellow-500" },
-   { label: "Active Vendors", value: "0", icon: "🏪", color: "text-purple-500" },
-];
+export default async function SuperAdminOverviewPage() {
+   const session = await getServerSession(authOptions);
 
-const recentActivities = [
-   { type: "New User", description: "User registered", time: "2 hours ago" },
-   { type: "New Order", description: "Order placed", time: "1 hour ago" },
-   { type: "Vendor Signup", description: "New vendor registered", time: "30 minutes ago" },
-];
-
-export default function SuperAdminOverviewPage() {
-   const { data: session, status } = useSession();
-   const [mounted, setMounted] = useState(false);
-
-   useEffect(() => {
-      setMounted(true);
-   }, []);
-
-   if (!mounted) return null;
-
-   if (status === "unauthenticated") {
+   if (!session) {
       redirect("/login");
-   }
-
-   if (status === "loading") {
-      return (
-         <div className="min-h-screen flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pcolor" />
-         </div>
-      );
    }
 
    if (session?.user?.role !== "SUPER_ADMIN") {
       redirect("/unauthorized");
    }
+
+   const data = await getSuperAdminDashboardData();
+   const { stats, recentActivities, error } = data;
 
    return (
       <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 py-12 px-4">
@@ -53,6 +29,12 @@ export default function SuperAdminOverviewPage() {
                <h1 className="text-4xl font-bold text-hcolor mb-2">Dashboard</h1>
                <p className="text-muted-foreground">Welcome back, Super Admin</p>
             </div>
+
+            {error && (
+               <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-8 border border-red-200">
+                  {error}
+               </div>
+            )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -73,26 +55,8 @@ export default function SuperAdminOverviewPage() {
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-               {/* Recent Activity */}
-               <Card className="lg:col-span-2 border-border/50 bg-card/50 backdrop-blur">
-                  <CardHeader>
-                     <CardTitle>Recent Activity</CardTitle>
-                     <CardDescription>Latest platform activities</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                     <div className="space-y-4">
-                        {recentActivities.map((activity, idx) => (
-                           <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-background/30 border border-border/50">
-                              <div>
-                                 <p className="font-medium text-foreground">{activity.type}</p>
-                                 <p className="text-sm text-muted-foreground">{activity.description}</p>
-                              </div>
-                              <span className="text-xs text-muted-foreground">{activity.time}</span>
-                           </div>
-                        ))}
-                     </div>
-                  </CardContent>
-               </Card>
+               {/* Recent Activity (Client Component mixed with Server Data) */}
+               <RecentActivityClient activities={recentActivities} />
 
                {/* Quick Actions */}
                <Card className="border-border/50 bg-card/50 backdrop-blur">
@@ -101,9 +65,11 @@ export default function SuperAdminOverviewPage() {
                      <CardDescription>Common tasks</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                     <Button className="w-full bg-pcolor hover:bg-scolor justify-start">
-                        <span className="mr-2">👥</span> Manage Users
-                     </Button>
+                     <Link href="/super-admin/users">
+                        <Button className="w-full bg-pcolor hover:bg-scolor justify-start mb-3">
+                           <span className="mr-2">👥</span> Manage Users
+                        </Button>
+                     </Link>
                      <Button variant="outline" className="w-full justify-start">
                         <span className="mr-2">🏪</span> Manage Vendors
                      </Button>
