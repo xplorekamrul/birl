@@ -1,11 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
-import { useAction } from "next-safe-action/hooks";
 import { addToCart } from "@/actions/cart/add-to-cart";
-import { useCartStore, CartPurchaseType } from "@/store/cart";
 import { Button } from "@/components/ui/button";
-// import { toast } from "sonner"; // uncomment if you're using a toast lib
+import { CartPurchaseType, useCartStore } from "@/store/cart";
+import { useAction } from "next-safe-action/hooks";
+import { useTransition } from "react";
+// import { toast } from "sonner";
 
 type AddToCartButtonProps = {
   productId: string;
@@ -29,10 +29,10 @@ export function AddToCartButton({
   variantId = null,
 }: AddToCartButtonProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const openCart = useCartStore((s) => s.open);   // ← open drawer
   const [isPending, startTransition] = useTransition();
 
   const { execute, status } = useAction(addToCart, {
-    // ✅ FIX: destructure { data } from the result
     onSuccess({ data }) {
       if (!data) return;
 
@@ -55,6 +55,9 @@ export function AddToCartButton({
         purchaseType,
         variantId,
       });
+
+      // Open the cart drawer so the user sees what they added
+      openCart();
 
       // toast.success("Added to cart");
     },
