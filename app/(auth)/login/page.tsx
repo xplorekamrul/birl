@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   title: "Login",
 };
 
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 export default function Page({
@@ -33,6 +35,11 @@ async function LoginContent({
 }) {
   const sp = await searchParams;
   const callbackUrl = sp?.callbackUrl ?? "/";
+
+  const session = await auth();
+  if (session?.user) {
+    redirect(callbackUrl);
+  }
 
   return <LoginForm callbackUrl={callbackUrl} />;
 }

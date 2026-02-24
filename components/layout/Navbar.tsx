@@ -5,6 +5,7 @@ import SignOutButton from "@/components/auth/SignOutButton";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {  Search, X, Loader2, Package, Menu,  } from "lucide-react";
 
 type Role = "DEVELOPER" | "SUPER_ADMIN" | "ADMIN" | "USER" | "VENDOR";
 
@@ -26,7 +27,7 @@ const roleNav: Record<Role, { label: string; href: string }[]> = {
   DEVELOPER: [{ label: "Dev Tools", href: "/developer/tools" }],
   SUPER_ADMIN: [
     { label: "Dashboard", href: "/super-admin/overview" },
-    { label: "Users", href: "/super-admin/users" }
+    { label: "Users", href: "/super-admin/users" },
   ],
   ADMIN: [{ label: "Admin Panel", href: "/admin" }],
   USER: [
@@ -72,52 +73,57 @@ export default function Navbar() {
     [role]
   );
 
-  const [open, setOpen] = useState(false);
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const btnRef = useRef<HTMLButtonElement | null>(null);
+  // ── Refs ───────────────────────────────────────────────────────────────────
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const userBtnRef = useRef<HTMLButtonElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Search functionality
+  // ── Search debounce ────────────────────────────────────────────────────────
   useEffect(() => {
-    const debounce = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       if (searchQuery.trim().length >= 2) {
         setIsSearching(true);
-        const results = await searchProducts(searchQuery);
-        setSearchResults(results as SearchResult[]);
-        setSearchOpen(true);
-        setIsSearching(false);
+        try {
+          const results = await searchProducts(searchQuery);
+          setSearchResults(results as SearchResult[]);
+          setSearchDropdownOpen(true);
+        } finally {
+          setIsSearching(false);
+        }
       } else {
         setSearchResults([]);
-        setSearchOpen(false);
+        setSearchDropdownOpen(false);
       }
     }, 300);
-
-    return () => clearTimeout(debounce);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // ── Click-outside & Escape handlers ───────────────────────────────────────
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       const t = e.target as Node | null;
       if (!t) return;
-      const clickedInsideMenu = !!menuRef.current?.contains(t);
-      const clickedButton = !!btnRef.current?.contains(t);
-      const clickedInsideSearch = !!searchRef.current?.contains(t);
-      if (!clickedInsideMenu && !clickedButton) setOpen(false);
-      if (!clickedInsideSearch) setSearchOpen(false);
+      if (!userMenuRef.current?.contains(t) && !userBtnRef.current?.contains(t)) {
+        setUserMenuOpen(false);
+      }
+      if (!searchRef.current?.contains(t)) {
+        setSearchDropdownOpen(false);
+      }
     }
     function onEsc(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setOpen(false);
+        setUserMenuOpen(false);
         setMobileMenuOpen(false);
-        setSearchOpen(false);
+        setSearchDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", onDocClick);
@@ -128,474 +134,420 @@ export default function Navbar() {
     };
   }, []);
 
-  // Close mobile menu when clicking outside
+  // Lock body scroll when mobile drawer is open
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
-        setMobileMenuOpen(false);
-      }
-    }
     if (mobileMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [mobileMenuOpen]);
 
-  return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur">
-      <nav className="mx-auto max-w-6xl flex h-14 w-full items-center justify-between px-4 gap-4">
-        {/* Brand + Desktop Nav */}
-        <div className="flex items-center gap-3 shrink-0">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <span className="inline-block h-6 w-6 rounded-md bg-pcolor/90" />
-            <span className="font-semibold text-hcolor hidden sm:inline">Birl Ecommerce</span>
-          </Link>
-
-          {/* Desktop Navigation - Hidden on mobile */}
-          <ul className="hidden md:flex ml-4 items-center gap-2">
-            {items.map((it) => (
-              <li key={it.href}>
-                <Link
-                  href={it.href}
-                  className="rounded-md px-3 py-2 text-sm text-foreground/85 hover:bg-muted/60 hover:text-foreground"
-                >
-                  {it.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+  // renderSearchResults — plain function, not a component, so no remount issues
+  const renderSearchResults = (compact: boolean, onSelect: () => void) =>
+    searchResults.map((product) => (
+      <Link
+        key={product.id}
+        href={`/product/${product.slug}`}
+        onClick={onSelect}
+        className={`flex items-center gap-3 hover:bg-muted/60 transition-colors ${
+          compact ? "p-2 rounded-md" : "p-3 border-b border-border last:border-b-0"
+        }`}
+      >
+        {product.images[0] ? (
+          <img
+            src={product.images[0].url}
+            alt={product.name}
+            className={`object-cover rounded shrink-0 ${compact ? "w-9 h-9" : "w-11 h-11"}`}
+          />
+        ) : (
+          <div
+            className={`bg-muted rounded flex items-center justify-center shrink-0 ${
+              compact ? "w-9 h-9" : "w-11 h-11"
+            }`}
+          >
+            <Package className="w-5 h-5 text-muted-foreground" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+          <p className="text-sm text-pcolor font-semibold">
+            ${product.salePrice ?? product.basePrice}
+          </p>
         </div>
+      </Link>
+    ));
 
-        {/* Search Box - Desktop Only */}
-        <div className="hidden md:flex flex-1 max-w-md mx-4 relative" ref={searchRef}>
-          <div className="relative w-full">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-10 pr-4 rounded-md border border-border bg-background/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-pcolor/50 focus:border-pcolor"
-            />
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            {isSearching && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pcolor" />
-              </div>
-            )}
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <>
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/90 backdrop-blur-md">
+        <nav className="mx-auto max-w-6xl flex h-14 items-center gap-3 px-4">
+
+          {/* ── Left: Brand + Nav Links (grouped together) ── */}
+          <div className="flex items-center gap-1 shrink-0">
+            <Link href="/" className="inline-flex items-center gap-2 mr-2">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-pcolor/90">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+              </span>
+              <span className="font-semibold text-hcolor hidden sm:inline tracking-tight">
+                Birl Ecommerce
+              </span>
+            </Link>
+
+            {/* Desktop nav links — immediately after logo */}
+            <ul className="hidden md:flex items-center gap-0.5">
+              {items.map((it) => (
+                <li key={it.href}>
+                  <Link
+                    href={it.href}
+                    className="rounded-md px-3 py-1.5 text-sm text-foreground/75 hover:bg-muted/70 hover:text-foreground transition-colors"
+                  >
+                    {it.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Search Results Dropdown */}
-          {searchOpen && searchResults.length > 0 && (
-            <div className="absolute top-full mt-2 w-full bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
-              {searchResults.map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.slug}`}
-                  onClick={() => {
-                    setSearchOpen(false);
-                    setSearchQuery("");
-                  }}
-                  className="flex items-center gap-3 p-3 hover:bg-muted/60 transition-colors border-b border-border last:border-b-0"
-                >
-                  {product.images[0] ? (
-                    <img
-                      src={product.images[0].url}
-                      alt={product.name}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                      <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                    <p className="text-sm text-pcolor font-semibold">
-                      ${product.salePrice || product.basePrice}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          {/* ── Spacer pushes search + user to the right ── */}
+          <div className="flex-1" />
 
-          {searchOpen && searchQuery.trim().length >= 2 && searchResults.length === 0 && !isSearching && (
-            <div className="absolute top-full mt-2 w-full bg-card border border-border rounded-lg shadow-lg p-4 text-center z-50">
-              <p className="text-sm text-muted-foreground">No products found</p>
-            </div>
-          )}
-        </div>
-
-        {/* Right side */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile Search Icon - Only visible on mobile */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden rounded-md p-2 hover:bg-muted/60"
-            aria-label="Search"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          {/* ── Desktop Search ── */}
+          <div className="hidden md:block w-64 relative" ref={searchRef}>
+            {/* Inline input — NOT a sub-component to avoid remount/focus loss */}
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-2.5 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-9 pl-9 pr-9 rounded-md border border-border bg-background/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-pcolor/40 focus:border-pcolor transition-colors"
               />
-            </svg>
-          </button>
-
-          {/* Mobile Menu Button - Only visible on mobile */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden rounded-md p-2 hover:bg-muted/60"
-            aria-label="Open menu"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-
-          {/* User Menu - Hidden on mobile when drawer is open */}
-          <div className={`${mobileMenuOpen ? "hidden" : ""} hidden md:block`}>
-            {status === "loading" ? (
-              <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
-            ) : user ? (
-              <div className="relative">
+              {isSearching && (
+                <div className="absolute right-3 top-2.5 -translate-y-1/2">
+                  <Loader2 className="w-3.5 h-3.5 text-pcolor animate-spin" />
+                </div>
+              )}
+              {!isSearching && searchQuery && (
                 <button
-                  ref={btnRef}
-                  type="button"
-                  onClick={() => setOpen((v) => !v)}
-                  className="rounded-full border border-border bg-background p-0.5 hover:border-foreground/30"
-                  aria-haspopup="menu"
-                  aria-expanded={open}
-                  aria-label="User menu"
+                  onClick={() => { setSearchQuery(""); setSearchDropdownOpen(false); }}
+                  className="absolute right-3 top-2.5 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-semibold text-foreground">
-                    {initials(user.name, user.email)}
-                  </div>
+                  <X className="w-3.5 h-3.5" />
                 </button>
-
-                {open ? (
-                  <div
-                    ref={menuRef}
-                    role="menu"
-                    className="absolute right-0 mt-2 w-60 rounded-lg border border-border bg-card p-2 text-sm shadow-lg"
-                  >
-                    <div className="px-2 py-1.5">
-                      <p className="truncate font-medium text-foreground">
-                        {user.name ?? user.email}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {user.email}
-                      </p>
-                      {role ? (
-                        <p className="mt-1 inline-flex items-center rounded bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/80">
-                          {role}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div className="my-1 h-px w-full bg-border" />
-
-                    <ul className="px-1 py-1">
-                      <li>
-                        <Link
-                          href="/profile"
-                          className="block rounded-md px-2 py-2 hover:bg-muted/70"
-                          onClick={() => setOpen(false)}
-                        >
-                          Profile
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/settings"
-                          className="block rounded-md px-2 py-2 hover:bg-muted/70"
-                          onClick={() => setOpen(false)}
-                        >
-                          Settings
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          href="/help"
-                          className="block rounded-md px-2 py-2 hover:bg-muted/70"
-                          onClick={() => setOpen(false)}
-                        >
-                          Help / Docs
-                        </Link>
-                      </li>
-                    </ul>
-
-                    <div className="my-1 h-px w-full bg-border" />
-
-                    <div className="px-1 py-1">
-                      <SignOutButton />
-                    </div>
+              )}
+            </div>
+            {/* Dropdown */}
+            {searchDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-card border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto z-50">
+                {searchResults.length > 0 ? (
+                  renderSearchResults(false, () => {
+                    setSearchDropdownOpen(false);
+                    setSearchQuery("");
+                  })
+                ) : !isSearching ? (
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">No products found for "{searchQuery}"</p>
                   </div>
                 ) : null}
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="rounded-md px-3 py-2 text-sm hover:bg-muted/60"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="rounded-md bg-pcolor px-3 py-2 text-sm text-white hover:bg-scolor"
-                >
-                  Register
-                </Link>
-              </div>
             )}
           </div>
-        </div>
-      </nav>
 
-      {/* Mobile Drawer - Only visible on mobile */}
+          {/* ── Right: Mobile icons + Desktop user ── */}
+          <div className="flex items-center gap-1 shrink-0">
+
+            {/* Mobile: Search icon */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden rounded-md p-2 text-foreground/70 hover:bg-muted/60 hover:text-foreground transition-colors"
+              aria-label="Search"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+
+            {/* Mobile: Hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden rounded-md p-2 text-foreground/70 hover:bg-muted/60 hover:text-foreground transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            {/* Desktop: Auth / User Menu */}
+            <div className="hidden md:flex items-center">
+              {status === "loading" ? (
+                <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
+              ) : user ? (
+                <div className="relative">
+                  <button
+                    ref={userBtnRef}
+                    type="button"
+                    onClick={() => setUserMenuOpen((v) => !v)}
+                    className="rounded-full border-2 border-transparent hover:border-pcolor/40 transition-colors p-0.5"
+                    aria-haspopup="menu"
+                    aria-expanded={userMenuOpen}
+                    aria-label="User menu"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pcolor/15 text-sm font-semibold text-pcolor">
+                      {initials(user.name, user.email)}
+                    </div>
+                  </button>
+
+                  {userMenuOpen && (
+                    <div
+                      ref={userMenuRef}
+                      role="menu"
+                      className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-card shadow-xl p-1.5 z-50"
+                    >
+                      {/* User info */}
+                      <div className="px-3 py-2 mb-1">
+                        <p className="truncate font-medium text-foreground text-sm">
+                          {user.name ?? user.email}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground mt-0.5">
+                          {user.email}
+                        </p>
+                        {role && (
+                          <span className="mt-1.5 inline-flex items-center rounded-full bg-pcolor/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pcolor">
+                            {role}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="h-px bg-border mx-1 mb-1" />
+
+                      {[
+                        { label: "Profile", href: "/profile" },
+                        { label: "Settings", href: "/settings" },
+                        { label: "Help / Docs", href: "/help" },
+                      ].map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          role="menuitem"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="block rounded-lg px-3 py-2 text-sm text-foreground/80 hover:bg-muted/60 hover:text-foreground transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+
+                      <div className="h-px bg-border mx-1 my-1" />
+
+                      <div className="px-1">
+                        <SignOutButton />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="rounded-md px-3 py-1.5 text-sm text-foreground/80 hover:bg-muted/60 hover:text-foreground transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="rounded-md bg-pcolor px-3 py-1.5 text-sm font-medium text-white hover:bg-scolor transition-colors"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      {/* ── Mobile Drawer ─────────────────────────────────────────────────────── */}
       {mobileMenuOpen && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Drawer */}
+          {/* Drawer panel */}
           <div
             ref={drawerRef}
-            className="fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50 md:hidden overflow-y-auto"
+            className="fixed top-0 left-0 h-full w-72 max-w-[85vw] bg-card border-r border-border z-50 md:hidden flex flex-col overflow-hidden"
           >
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
               <Link
                 href="/"
                 className="inline-flex items-center gap-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="inline-block h-6 w-6 rounded-md bg-pcolor/90" />
-                <span className="font-semibold text-hcolor">Birl Ecommerce</span>
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-pcolor/90">
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                </span>
+                <span className="font-semibold text-hcolor tracking-tight">Birl Ecommerce</span>
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-md p-1 hover:bg-muted/60"
+                className="rounded-lg p-1.5 text-foreground/60 hover:bg-muted/60 hover:text-foreground transition-colors"
                 aria-label="Close menu"
               >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Search in Mobile Drawer */}
-            <div className="p-4 border-b border-border">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-9 pl-10 pr-4 rounded-md border border-border bg-background/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-pcolor/50 focus:border-pcolor"
-                />
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* Search */}
+              <div className="px-4 py-3 border-b border-border">
+                {/* Inline input — NOT a sub-component to avoid remount/focus loss */}
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                    className="w-full h-9 pl-9 pr-9 rounded-md border border-border bg-background/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-pcolor/40 focus:border-pcolor transition-colors"
                   />
-                </svg>
-              </div>
-
-              {/* Mobile Search Results */}
-              {searchResults.length > 0 && searchQuery.trim().length >= 2 && (
-                <div className="mt-2 max-h-64 overflow-y-auto space-y-2">
-                  {searchResults.map((product) => (
-                    <Link
-                      key={product.id}
-                      href={`/product/${product.slug}`}
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setSearchQuery("");
-                      }}
-                      className="flex items-center gap-3 p-2 hover:bg-muted/60 rounded-md transition-colors"
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-3.5 h-3.5 text-pcolor animate-spin" />
+                    </div>
+                  )}
+                  {!isSearching && searchQuery && (
+                    <button
+                      onClick={() => { setSearchQuery(""); setSearchDropdownOpen(false); }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {product.images[0] ? (
-                        <img
-                          src={product.images[0].url}
-                          alt={product.name}
-                          className="w-10 h-10 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                          <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">{product.name}</p>
-                        <p className="text-xs text-pcolor font-semibold">
-                          ${product.salePrice || product.basePrice}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* User Info in Drawer */}
-            {user && (
-              <div className="p-4 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
-                    {initials(user.name, user.email)}
+                {searchResults.length > 0 && searchQuery.trim().length >= 2 && (
+                  <div className="mt-2 space-y-0.5 max-h-52 overflow-y-auto">
+                    {renderSearchResults(true, () => {
+                      setMobileMenuOpen(false);
+                      setSearchQuery("");
+                    })}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate font-medium text-foreground text-sm">
-                      {user.name ?? user.email}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-                {role && (
-                  <p className="mt-2 inline-flex items-center rounded bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/80">
-                    {role}
+                )}
+                {searchQuery.trim().length >= 2 && searchResults.length === 0 && !isSearching && (
+                  <p className="mt-2 text-xs text-muted-foreground text-center py-2">
+                    No products found
                   </p>
                 )}
               </div>
-            )}
 
-            {/* Navigation Links */}
-            <nav className="p-4">
-              <ul className="space-y-1">
-                {items.map((it) => (
-                  <li key={it.href}>
-                    <Link
-                      href={it.href}
-                      className="block rounded-md px-3 py-2 text-sm text-foreground/85 hover:bg-muted/60 hover:text-foreground"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {it.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-
-              {/* User Links */}
+              {/* User info */}
               {user && (
-                <>
-                  <div className="my-3 h-px w-full bg-border" />
-                  <ul className="space-y-1">
-                    <li>
-                      <Link
-                        href="/profile"
-                        className="block rounded-md px-3 py-2 text-sm hover:bg-muted/60"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Profile
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/settings"
-                        className="block rounded-md px-3 py-2 text-sm hover:bg-muted/60"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Settings
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/help"
-                        className="block rounded-md px-3 py-2 text-sm hover:bg-muted/60"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Help / Docs
-                      </Link>
-                    </li>
-                  </ul>
-                </>
+                <div className="px-4 py-3 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pcolor/15 text-sm font-semibold text-pcolor">
+                      {initials(user.name, user.email)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-foreground text-sm">
+                        {user.name ?? user.email}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  {role && (
+                    <span className="mt-2 inline-flex items-center rounded-full bg-pcolor/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-pcolor">
+                      {role}
+                    </span>
+                  )}
+                </div>
               )}
 
-              {/* Auth Buttons */}
-              <div className="mt-4">
-                {user ? (
-                  <SignOutButton />
-                ) : (
-                  <div className="space-y-2">
-                    <Link
-                      href="/login"
-                      className="block w-full rounded-md px-3 py-2 text-sm text-center hover:bg-muted/60"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      href="/register"
-                      className="block w-full rounded-md bg-pcolor px-3 py-2 text-sm text-white text-center hover:bg-scolor"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Register
-                    </Link>
-                  </div>
+              {/* Navigation */}
+              <nav className="px-3 py-3">
+                <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  Navigation
+                </p>
+                <ul className="space-y-0.5">
+                  {items.map((it) => (
+                    <li key={it.href}>
+                      <Link
+                        href={it.href}
+                        className="flex items-center rounded-lg px-3 py-2.5 text-sm text-foreground/80 hover:bg-muted/60 hover:text-foreground transition-colors"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {it.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Account links */}
+                {user && (
+                  <>
+                    <div className="h-px bg-border mx-1 my-3" />
+                    <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                      Account
+                    </p>
+                    <ul className="space-y-0.5">
+                      {[
+                        { label: "Profile", href: "/profile" },
+                        { label: "Settings", href: "/settings" },
+                        { label: "Help / Docs", href: "/help" },
+                      ].map((link) => (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            className="flex items-center rounded-lg px-3 py-2.5 text-sm text-foreground/80 hover:bg-muted/60 hover:text-foreground transition-colors"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
                 )}
-              </div>
-            </nav>
+              </nav>
+            </div>
+
+            {/* Auth footer */}
+            <div className="shrink-0 px-4 py-3 border-t border-border">
+              {user ? (
+                <SignOutButton />
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/login"
+                    className="flex items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex items-center justify-center rounded-lg bg-pcolor px-3 py-2 text-sm font-medium text-white hover:bg-scolor transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
-    </header>
+    </>
   );
 }
