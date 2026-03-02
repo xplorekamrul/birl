@@ -15,7 +15,7 @@ export async function getHomeData() {
     include: {
       brand: { select: { name: true } },
       vendor: { select: { shopName: true, shopSlug: true } },
-      images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+      media: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
     },
   } as const;
 

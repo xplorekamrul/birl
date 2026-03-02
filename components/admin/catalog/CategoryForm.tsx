@@ -22,6 +22,7 @@ export interface CategoryFormData {
    description: string;
    image: string;
    parentId: string;
+   superCategoryId?: string;
    isActive: boolean;
    displayOrder: number;
 }
@@ -49,6 +50,7 @@ export default function CategoryForm({
       description: initialData?.description || "",
       image: initialData?.image || "",
       parentId: initialData?.parentId || "",
+      superCategoryId: initialData?.superCategoryId || "",
       isActive: initialData?.isActive ?? true,
       displayOrder: initialData?.displayOrder ?? 0,
    });

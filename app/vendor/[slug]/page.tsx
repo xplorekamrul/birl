@@ -50,7 +50,7 @@ export default async function VendorPage({ params }: VendorPageProps) {
                visibility: "PUBLIC",
             },
             include: {
-               images: {
+               media: {
                   orderBy: { sortOrder: "asc" },
                   take: 1,
                },
@@ -82,7 +82,7 @@ export default async function VendorPage({ params }: VendorPageProps) {
       shortDescription: p.shortDescription || null,
       brand: p.brand ? { name: p.brand.name } : null,
       vendor: p.vendor,
-      imageUrl: p.images[0]?.url || null,
+      imageUrl: p.media[0]?.url || null,
       initialWished: false, // You could fetch wishlist status if needed
    }));
 

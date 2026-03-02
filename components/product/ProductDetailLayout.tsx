@@ -74,8 +74,8 @@ export default function ProductDetailLayout({ product, isAuthenticated = false }
   const showPrice = hasSale ? product.salePrice : product.basePrice;
 
   const mainImageDefault =
-    product.images.find((img) => img.sortOrder === 0) ??
-    product.images[0] ??
+    product.media.find((img) => img.sortOrder === 0) ??
+    product.media[0] ??
     null;
 
   const [selectedImage, setSelectedImage] = useState(mainImageDefault);
@@ -86,7 +86,7 @@ export default function ProductDetailLayout({ product, isAuthenticated = false }
   const wishlistStore = useWishlistStore();
   const isInWishlist = wishlistStore.isInWishlist(product.id);
 
-  const otherImages = product.images.filter(
+  const otherImages = product.media.filter(
     (img) => !selectedImage || img.id !== selectedImage.id
   );
 
@@ -334,7 +334,7 @@ export default function ProductDetailLayout({ product, isAuthenticated = false }
                       productId={product.id}
                       slug={product.slug}
                       name={product.name}
-                      imageUrl={selectedImage?.url ?? product.images[0]?.url}
+                      imageUrl={selectedImage?.url ?? product.media[0]?.url}
                       vendorName={product.vendor.shopName}
                       unitPrice={Number(showPrice)}
                     />

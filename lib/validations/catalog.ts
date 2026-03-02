@@ -22,6 +22,7 @@ export const categorySchema = z.object({
   description: z.string().optional().nullable(),
   image: z.string().url().optional().nullable().or(z.literal("")),
   parentId: z.string().optional().nullable(),
+  superCategoryId: z.string().optional(),
   isActive: z.boolean().default(true),
   displayOrder: z.number().int().min(0).default(0),
 });

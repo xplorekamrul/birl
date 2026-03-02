@@ -23,7 +23,7 @@ const productInclude = {
          totalReviews: true,
       },
    },
-   images: true,
+   media: true,
 } satisfies Prisma.ProductInclude;
 
 export type ProductWithRelations = Prisma.ProductGetPayload<{

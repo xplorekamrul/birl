@@ -1,9 +1,9 @@
 "use server";
 
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { vendorAdminActionClient } from "@/lib/safe-action/clients";
 import type { ProductCreateValues } from "@/lib/validations/product";
+import { z } from "zod";
 
 const ImageZ = z.object({
   url: z.string().min(1),
@@ -63,9 +63,13 @@ export const createProductWithImages = vendorAdminActionClient
           lowStockThreshold: Number(payload.lowStockThreshold ?? "10"),
           status: payload.status,
           visibility: payload.visibility,
-          metaTitle: payload.metaTitle ?? null,
-          metaDescription: payload.metaDescription ?? null,
-          metaKeywords: payload.metaKeywords ?? null,
+          seo: {
+            create: {
+              seoTitle: payload.metaTitle ?? null,
+              metaDescription: payload.metaDescription ?? null,
+              additionalKeywords: payload.metaKeywords ?? null,
+            },
+          },
         },
         select: { id: true, slug: true },
       });
@@ -81,7 +85,7 @@ export const createProductWithImages = vendorAdminActionClient
 
         let sortOrder = 0;
         for (const img of ordered) {
-          await prisma.productImage.create({
+          await prisma.productMedia.create({
             data: {
               productId: product.id,
               url: img.url,

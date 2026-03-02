@@ -61,6 +61,7 @@ export default function CatalogPageClient({
         description: data.description || null,
         image: data.image || null,
         parentId: data.parentId || null,
+        superCategoryId: data.superCategoryId || undefined,
         isActive: data.isActive,
         displayOrder: data.displayOrder,
       });
@@ -96,6 +97,7 @@ export default function CatalogPageClient({
         description: data.description || null,
         image: data.image || null,
         parentId: data.parentId || null,
+        superCategoryId: data.superCategoryId || undefined,
         isActive: data.isActive,
         displayOrder: data.displayOrder,
       });

@@ -20,7 +20,7 @@ export default async function ShopPage() {
       shortDescription: true,
       brand: { select: { name: true } },
       vendor: { select: { shopName: true, shopSlug: true } },
-      images: {
+      media: {
         take: 1,
         orderBy: { sortOrder: "asc" },
         select: { url: true },
@@ -35,7 +35,7 @@ export default async function ShopPage() {
         {items.map((p) => {
           const basePriceNum = Number(p.basePrice); // convert Decimal -> number
           const salePriceNum = p.salePrice != null ? Number(p.salePrice) : null;
-          const imageUrl = p.images[0]?.url ?? null;
+          const imageUrl = p.media[0]?.url ?? null;
 
           return (
             <ProductCard

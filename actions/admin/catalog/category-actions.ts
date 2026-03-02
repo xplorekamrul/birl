@@ -29,6 +29,10 @@ export const createCategory = adminActionClient
     const baseSlug = parsedInput.slug || slugify(parsedInput.name);
     const finalSlug = await ensureUniqueCategorySlug(baseSlug);
 
+    const superCatId = parsedInput.superCategoryId || (await prisma.superCategory.findFirst({ select: { id: true } }))?.id;
+
+    if (!superCatId) throw new Error("No Super Category available");
+
     const category = await prisma.category.create({
       data: {
         name: parsedInput.name,
@@ -36,6 +40,7 @@ export const createCategory = adminActionClient
         description: parsedInput.description || null,
         image: parsedInput.image || null,
         parentId: parsedInput.parentId || null,
+        superCategoryId: superCatId,
         isActive: parsedInput.isActive ?? true,
         displayOrder: parsedInput.displayOrder ?? 0,
       },
@@ -55,6 +60,10 @@ export const updateCategory = adminActionClient
     const baseSlug = parsedInput.slug || slugify(parsedInput.name);
     const finalSlug = await ensureUniqueCategorySlug(baseSlug, parsedInput.id);
 
+    const superCatId = parsedInput.superCategoryId || (await prisma.superCategory.findFirst({ select: { id: true } }))?.id;
+
+    if (!superCatId) throw new Error("No Super Category available");
+
     const category = await prisma.category.update({
       where: { id: parsedInput.id },
       data: {
@@ -63,6 +72,7 @@ export const updateCategory = adminActionClient
         description: parsedInput.description || null,
         image: parsedInput.image || null,
         parentId: parsedInput.parentId || null,
+        superCategoryId: superCatId,
         isActive: parsedInput.isActive ?? true,
         displayOrder: parsedInput.displayOrder ?? 0,
       },
