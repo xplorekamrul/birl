@@ -4,10 +4,9 @@ import { createProductComprehensive } from "@/actions/vendor/products/create-pro
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { productComprehensiveSchema, type ProductComprehensiveValues } from "@/lib/validations/product-comprehensive";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -100,7 +99,7 @@ export default function ComprehensiveProductForm({
 }: Props) {
   const router = useRouter();
   const { executeAsync, status } = useAction(createProductComprehensive);
-  const [activeTab, setActiveTab] = useState("general");
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
@@ -110,34 +109,34 @@ export default function ComprehensiveProductForm({
     mode: "onChange",
   });
 
-  const { watch, formState: { errors, isValid } } = form;
-  const formValues = watch();
+  const { formState: { errors, isValid } } = form;
 
-  // Track required fields per tab
-  const requiredFieldsByTab = useMemo(() => ({
-    general: ["name", "slug", "categoryId", "basePrice", "productType"] as const,
-    media: [] as const,
-    variants: [] as const,
-    inventory: [] as const,
-    shipping: [] as const,
-    seo: [] as const,
-    related: [] as const,
-  }), []);
+  const isLastTab = activeTabIndex === TABS.length - 1;
+  const isFirstTab = activeTabIndex === 0;
 
-  // Check which tabs have unfilled required fields
+  // Check which tab indices have errors
   const tabsWithErrors = useMemo(() => {
     const tabs = new Set<string>();
     const generalFields = ["name", "slug", "categoryId", "basePrice", "productType"];
-
     Object.keys(errors).forEach((field) => {
-      if (generalFields.includes(field)) {
-        tabs.add("general");
-      }
+      if (generalFields.includes(field)) tabs.add("general");
     });
     return tabs;
   }, [errors]);
 
   const isSubmitting = status === "executing";
+
+  function goToNext() {
+    if (activeTabIndex < TABS.length - 1) {
+      setActiveTabIndex((i) => i + 1);
+    }
+  }
+
+  function goToPrev() {
+    if (activeTabIndex > 0) {
+      setActiveTabIndex((i) => i - 1);
+    }
+  }
 
   async function onSubmit(values: ProductComprehensiveValues) {
     setFormError(null);
@@ -161,9 +160,11 @@ export default function ComprehensiveProductForm({
     }
   }
 
+  const activeTab = TABS[activeTabIndex];
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
         {/* Error/Success Alerts */}
         {formError && (
           <Alert variant="destructive">
@@ -178,60 +179,126 @@ export default function ComprehensiveProductForm({
           </Alert>
         )}
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
-            {TABS.map((tab) => (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="relative text-xs sm:text-sm"
-              >
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.icon}</span>
-                {tabsWithErrors.has(tab.id) && (
-                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {/* Stepper Header */}
+        <div className="w-full overflow-x-auto pb-2">
+          <div className="flex items-center w-full justify-between px-1 py-2 min-w-[600px] md:min-w-0">
+            {TABS.map((tab, index) => {
+              const isActive = index === activeTabIndex;
+              const isCompleted = index < activeTabIndex;
+              const hasError = tabsWithErrors.has(tab.id);
 
-          <TabsContent value="general" className="space-y-4">
+              return (
+                <div key={tab.id} className={`flex items-center ${index < TABS.length - 1 ? "flex-1" : ""}`}>
+                  {/* Step Button */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTabIndex(index)}
+                    className={`
+                      flex flex-col items-center gap-1 group cursor-pointer
+                      transition-all duration-200 focus:outline-none
+                    `}
+                  >
+                    {/* Circle */}
+                    <div
+                      className={`
+                        relative flex items-center justify-center w-9 h-9 rounded-full text-sm font-semibold
+                        border-2 transition-all duration-200
+                        ${isActive
+                          ? "bg-slate-900 border-slate-900 text-white shadow-md scale-110"
+                          : isCompleted
+                            ? "bg-slate-700 border-slate-700 text-white"
+                            : "bg-white border-slate-300 text-slate-500 group-hover:border-slate-500 group-hover:text-slate-700"
+                        }
+                        ${hasError ? "border-red-500 bg-red-50 text-red-600" : ""}
+                      `}
+                    >
+                      {hasError ? (
+                        <span className="text-xs">!</span>
+                      ) : isCompleted ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <span>{index + 1}</span>
+                      )}
+                    </div>
+
+                    {/* Label */}
+                    <span
+                      className={`
+                        text-xs font-medium whitespace-nowrap transition-colors duration-200
+                        ${isActive ? "text-slate-900" : isCompleted ? "text-slate-600" : "text-slate-400 group-hover:text-slate-600"}
+                        ${hasError ? "text-red-500" : ""}
+                      `}
+                    >
+                      {tab.label}
+                    </span>
+                  </button>
+
+                  {/* Connector Line */}
+                  {index < TABS.length - 1 && (
+                    <div
+                      className={`
+                        h-0.5 flex-1 mx-2 sm:mx-4 mb-5 rounded-full transition-colors duration-300
+                        ${index < activeTabIndex ? "bg-slate-700" : "bg-slate-200"}
+                      `}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-slate-100 rounded-full h-1.5">
+          <div
+            className="bg-slate-800 h-1.5 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${((activeTabIndex + 1) / TABS.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Step Label */}
+        <div className="flex items-center justify-between text-sm text-slate-500">
+          <span className="font-medium text-slate-700">
+            {activeTab.icon} {activeTab.label}
+          </span>
+          <span>
+            Step {activeTabIndex + 1} of {TABS.length}
+          </span>
+        </div>
+
+        {/* Tab Content */}
+        <div className="min-h-[400px]">
+          {activeTab.id === "general" && (
             <GeneralTab
               form={form as any}
               superCategories={superCategories}
               categories={categories}
               brands={brands}
             />
-          </TabsContent>
-
-          <TabsContent value="media" className="space-y-4">
+          )}
+          {activeTab.id === "media" && (
             <MediaTab form={form as any} />
-          </TabsContent>
-
-          <TabsContent value="variants" className="space-y-4">
+          )}
+          {activeTab.id === "variants" && (
             <VariantsTab form={form as any} />
-          </TabsContent>
-
-          <TabsContent value="inventory" className="space-y-4">
+          )}
+          {activeTab.id === "inventory" && (
             <InventoryTab form={form as any} warehouses={warehouses} />
-          </TabsContent>
-
-          <TabsContent value="shipping" className="space-y-4">
+          )}
+          {activeTab.id === "shipping" && (
             <ShippingTab form={form as any} />
-          </TabsContent>
-
-          <TabsContent value="seo" className="space-y-4">
+          )}
+          {activeTab.id === "seo" && (
             <SeoTab form={form as any} />
-          </TabsContent>
-
-          <TabsContent value="related" className="space-y-4">
+          )}
+          {activeTab.id === "related" && (
             <RelatedProductsTab form={form as any} existingProducts={existingProducts} />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
 
         {/* Footer Actions */}
-        <div className="flex gap-3 border-t pt-6">
+        <div className="flex items-center gap-3 border-t pt-6">
+          {/* Cancel always on left */}
           <Button
             type="button"
             variant="outline"
@@ -240,13 +307,43 @@ export default function ComprehensiveProductForm({
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting || !isValid}
-            className="ml-auto"
-          >
-            {isSubmitting ? "Creating..." : "Create Product"}
-          </Button>
+
+          <div className="flex items-center gap-3 ml-auto">
+            {/* Back Button (shown from step 2 onward) */}
+            {!isFirstTab && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={goToPrev}
+                disabled={isSubmitting}
+                className="flex items-center gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Back
+              </Button>
+            )}
+
+            {/* Continue or Create Product */}
+            {isLastTab ? (
+              <Button
+                type="submit"
+                disabled={isSubmitting || !isValid}
+                className="flex items-center gap-1"
+              >
+                {isSubmitting ? "Creating..." : "Create Product"}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={goToNext}
+                disabled={isSubmitting}
+                className="flex items-center gap-1"
+              >
+                Continue
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </form>
     </Form>

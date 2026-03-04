@@ -91,6 +91,53 @@ export const createProductComprehensive = vendorActionClient
       }
 
       try {
+         // Generate SKU if not provided
+         const finalSku = sku || `${finalSlug}-${Date.now()}`;
+
+         // Check uniqueness for all product codes
+         const [existingSku, existingGtin, existingUpc, existingEan, existingIsbn] = await Promise.all([
+            sku ? prisma.product.findUnique({ where: { sku: finalSku } }) : null,
+            gtin ? prisma.product.findUnique({ where: { gtin } }) : null,
+            upc ? prisma.product.findUnique({ where: { upc } }) : null,
+            ean ? prisma.product.findUnique({ where: { ean } }) : null,
+            isbn ? prisma.product.findUnique({ where: { isbn } }) : null,
+         ]);
+
+         if (existingSku) {
+            return {
+               ok: false as const,
+               message: `SKU "${finalSku}" is already in use by another product. Please use a different SKU.`,
+            };
+         }
+
+         if (existingGtin) {
+            return {
+               ok: false as const,
+               message: `GTIN "${gtin}" is already in use by another product. Please use a different GTIN.`,
+            };
+         }
+
+         if (existingUpc) {
+            return {
+               ok: false as const,
+               message: `UPC "${upc}" is already in use by another product. Please use a different UPC.`,
+            };
+         }
+
+         if (existingEan) {
+            return {
+               ok: false as const,
+               message: `EAN "${ean}" is already in use by another product. Please use a different EAN.`,
+            };
+         }
+
+         if (existingIsbn) {
+            return {
+               ok: false as const,
+               message: `ISBN "${isbn}" is already in use by another product. Please use a different ISBN.`,
+            };
+         }
+
          // Create product with all related data
          const product = await prisma.product.create({
             data: {
@@ -109,7 +156,7 @@ export const createProductComprehensive = vendorActionClient
                salePrice: salePrice ? parseFloat(salePrice) : null,
                cost: cost ? parseFloat(cost) : null,
 
-               sku: sku || null,
+               sku: finalSku,
                barcode: barcode || null,
                gtin: gtin || null,
                upc: upc || null,
@@ -310,6 +357,17 @@ export const createProductComprehensive = vendorActionClient
          };
       } catch (error) {
          console.error("Product creation error:", error);
+
+         // Handle Prisma unique constraint errors
+         if (error instanceof Error && error.message.includes("Unique constraint failed")) {
+            const match = error.message.match(/`(\w+)`/);
+            const field = match ? match[1] : "field";
+            return {
+               ok: false as const,
+               message: `The ${field} value is already in use by another product. Please use a different value.`,
+            };
+         }
+
          return {
             ok: false as const,
             message: error instanceof Error ? error.message : "Failed to create product",

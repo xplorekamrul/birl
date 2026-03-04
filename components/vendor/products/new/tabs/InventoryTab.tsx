@@ -50,8 +50,10 @@ export default function InventoryTab({ form, warehouses }: Props) {
                      {fields.map((field, index) => (
                         <div key={field.id} className="rounded-lg border p-3">
                            <div className="flex gap-3">
-                              <div className="flex-1 space-y-2">
-                                 <FormField
+                              <div className=" space-y-2">
+                                 
+                                 <div className="grid lg:grid-cols-4 grid-cols-1 gap-2">
+                                    <FormField
                                     control={control}
                                     name={`stocks.${index}.warehouseId`}
                                     render={({ field }) => (
@@ -75,7 +77,6 @@ export default function InventoryTab({ form, warehouses }: Props) {
                                        </FormItem>
                                     )}
                                  />
-                                 <div className="grid grid-cols-3 gap-2">
                                     <FormField
                                        control={control}
                                        name={`stocks.${index}.quantity`}

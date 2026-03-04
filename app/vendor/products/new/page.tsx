@@ -65,21 +65,8 @@ export default async function VendorNewProductPage() {
   ]);
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-linear-to-b from-sky-50 to-sky-100/70 px-4 py-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-              {vendorProfile?.shopName || "Vendor"} · New Product
-            </p>
-            <h1 className="text-2xl font-semibold text-pcolor">
-              Add a new product
-            </h1>
-            <p className="text-sm text-slate-500">
-              Create a detailed, high-converting product listing for your store.
-            </p>
-          </div>
-        </header>
+    <div className="min-h-[calc(100vh-80px)] bg-linear-to-b from-sky-50 to-sky-100/70 px-4 py-2">
+      <div className="mx-auto max-w-7xl space-y-6">
 
         <ComprehensiveProductForm
           vendorId={vendorProfile.id}
