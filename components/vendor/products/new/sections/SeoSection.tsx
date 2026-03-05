@@ -1,12 +1,12 @@
 "use client";
 
-import type { FC } from "react";
 import type { ProductCreateValues } from "@/lib/validations/product";
+import type { FC } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
   form: ProductCreateValues;
@@ -68,7 +68,7 @@ const SeoSection: FC<Props> = ({ form, onChange }) => {
             {form.metaTitle || form.name || "Your product title"}
           </p>
           <p className="text-xs text-green-700 truncate">
-            birl-ecom.com/product/{form.slug || "slug-preview"}
+            birl-ecom.com/{form.slug || "slug-preview"}
           </p>
           <p className="mt-1 line-clamp-2 text-xs text-slate-600">
             {form.metaDescription ||

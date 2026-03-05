@@ -1,10 +1,10 @@
-import Link from "next/link";
-import Image from "next/image";
-import { Percent } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import ProductCardActions from "./ProductCardActions";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Percent } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import ProductCardActions from "./ProductCardActions";
 
 type MinimalBrand = { name: string };
 type MinimalVendor = { shopName: string; shopSlug?: string };
@@ -52,7 +52,7 @@ export default function ProductCard({
         className
       )}
     >
-      <Link href={`/product/${product.slug}`} className="block">
+      <Link href={`/${product.slug}`} className="block">
         <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
           {product.imageUrl ? (
             <Image
@@ -92,7 +92,7 @@ export default function ProductCard({
         </div>
 
         <Link
-          href={`/product/${product.slug}`}
+          href={`/${product.slug}`}
           className="line-clamp-2 text-sm font-semibold text-slate-900 hover:underline"
         >
           {product.name}

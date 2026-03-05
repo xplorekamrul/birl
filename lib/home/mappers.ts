@@ -11,7 +11,7 @@ export function mapToProductCardData(p: any): ProductCardData {
     shortDescription: p.shortDescription ?? null,
     brand: p.brand ? { name: p.brand.name } : null,
     vendor: p.vendor ? { shopName: p.vendor.shopName, shopSlug: p.vendor.shopSlug } : null,
-    imageUrl: p.images?.[0]?.url ?? null,
+    imageUrl: p.media?.[0]?.url ?? null,
     initialWished: false,
   };
 }

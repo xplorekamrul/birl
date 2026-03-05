@@ -101,7 +101,7 @@ export async function getWishlistItems() {
                   basePrice: true,
                   salePrice: true,
                   shortDescription: true,
-                  images: {
+                  media: {
                      select: {
                         url: true,
                      },
@@ -125,7 +125,7 @@ export async function getWishlistItems() {
             basePrice: Number(item.product.basePrice),
             salePrice: item.product.salePrice ? Number(item.product.salePrice) : null,
             shortDescription: item.product.shortDescription,
-            images: item.product.images,
+            media: item.product.media,
          },
       }));
 

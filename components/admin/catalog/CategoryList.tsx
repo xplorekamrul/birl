@@ -13,6 +13,7 @@ export interface CategoryItem {
    description?: string | null;
    image?: string | null;
    parentId?: string | null;
+   superCategoryId?: string | null;
    isActive: boolean;
    displayOrder: number;
 }

@@ -38,12 +38,12 @@ export const getVendorOrderDetails = vendorOnlyActionClient
             items: {
                include: {
                   product: {
-                     select: { name: true, slug: true, images: { take: 1 } },
+                     select: { name: true, slug: true, media: { take: 1 } },
                   },
                   variant: { select: { sku: true } },
                },
             },
-            Fulfillment: {
+            fulfillments: {
                include: {
                   items: true,
                   events: { orderBy: { occurredAt: "desc" } },

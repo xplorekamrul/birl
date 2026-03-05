@@ -10,7 +10,19 @@ async function getCatalogData() {
   cacheLife("minutes");
   cacheTag("admin-catalog");
 
-  const [categories, brands] = await Promise.all([
+  const [superCategories, categories, brands] = await Promise.all([
+    prisma.superCategory.findMany({
+      orderBy: { displayOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        image: true,
+        isActive: true,
+        displayOrder: true,
+      },
+    }),
     prisma.category.findMany({
       orderBy: { displayOrder: "asc" },
       select: {
@@ -20,6 +32,7 @@ async function getCatalogData() {
         description: true,
         image: true,
         parentId: true,
+        superCategoryId: true,
         isActive: true,
         displayOrder: true,
       },
@@ -30,7 +43,7 @@ async function getCatalogData() {
     }),
   ]);
 
-  return { categories, brands };
+  return { superCategories, categories, brands };
 }
 
 export default async function AdminCatalogPage() {
@@ -49,7 +62,7 @@ export default async function AdminCatalogPage() {
   }
 
   // Fetch cached data
-  const { categories, brands } = await getCatalogData();
+  const { superCategories, categories, brands } = await getCatalogData();
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-linear-to-b from-sky-50 to-sky-100/70 px-4 py-8">
@@ -59,14 +72,15 @@ export default async function AdminCatalogPage() {
             Admin · Catalog
           </p>
           <h1 className="text-2xl font-semibold text-pcolor">
-            Categories & Brands
+            Catalog Management
           </h1>
           <p className="text-sm text-slate-500">
-            Manage the taxonomy of your marketplace: categories and brands that vendors use when creating products.
+            Manage the taxonomy of your marketplace: super categories, categories, and brands that vendors use when creating products.
           </p>
         </header>
 
         <CatalogPageClient
+          initialSuperCategories={superCategories}
           initialCategories={categories}
           initialBrands={brands}
         />

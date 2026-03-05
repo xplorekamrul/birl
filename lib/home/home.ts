@@ -1,7 +1,7 @@
-// lib/home/home.ts
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
 import "server-only";
+import { mapProductsToCardData } from "./mappers";
 
 export async function getHomeData() {
   "use cache";
@@ -15,7 +15,7 @@ export async function getHomeData() {
     include: {
       brand: { select: { name: true } },
       vendor: { select: { shopName: true, shopSlug: true } },
-      images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+      media: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
     },
   } as const;
 
@@ -67,23 +67,11 @@ export async function getHomeData() {
 
   // Serialize Decimal types to numbers for client component compatibility
   return {
-    offers,
+    offers: JSON.parse(JSON.stringify(offers)) as typeof offers, // Ensure offers don't contain Decimals natively
     categories,
     brands,
-    featuredProducts: featuredProducts.map((p) => ({
-      ...p,
-      basePrice: Number(p.basePrice),
-      salePrice: p.salePrice ? Number(p.salePrice) : null,
-      cost: p.cost ? Number(p.cost) : null,
-      averageRating: p.averageRating ? Number(p.averageRating) : 0,
-    })),
-    deals: deals.map((p) => ({
-      ...p,
-      basePrice: Number(p.basePrice),
-      salePrice: p.salePrice ? Number(p.salePrice) : null,
-      cost: p.cost ? Number(p.cost) : null,
-      averageRating: p.averageRating ? Number(p.averageRating) : 0,
-    })),
+    featuredProducts: mapProductsToCardData(featuredProducts),
+    deals: mapProductsToCardData(deals),
     vendors: vendors.map((v) => ({
       ...v,
       averageRating: Number(v.averageRating ?? 0),

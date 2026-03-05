@@ -1,8 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { productCreateSchema } from "@/lib/validations/product";
 import { vendorActionClient } from "@/lib/safe-action/clients";
+import { productCreateSchema } from "@/lib/validations/product";
 
 function slugify(name: string) {
   return name
@@ -86,9 +86,13 @@ export const createProduct = vendorActionClient
         status,
         visibility,
 
-        metaTitle: metaTitle || null,
-        metaDescription: metaDescription || null,
-        metaKeywords: metaKeywords || null,
+        seo: {
+          create: {
+            seoTitle: metaTitle || null,
+            metaDescription: metaDescription || null,
+            additionalKeywords: metaKeywords || null,
+          }
+        },
 
         allowRefurbished: !!allowRefurbished,
         allowRent: !!allowRent,

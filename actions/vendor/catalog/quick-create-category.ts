@@ -2,8 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { vendorActionClient } from "@/lib/safe-action/clients";
-import { quickCreateNameSchema } from "@/lib/validations/catalog";
 import { slugify } from "@/lib/slugify";
+import { quickCreateNameSchema } from "@/lib/validations/catalog";
 
 async function ensureUniqueCategorySlug(base: string) {
   let slug = base;
@@ -25,11 +25,20 @@ export const quickCreateCategory = vendorActionClient
     const baseSlug = slugify(parsedInput.name);
     const finalSlug = await ensureUniqueCategorySlug(baseSlug);
 
+    const superCat = await prisma.superCategory.findFirst({
+      select: { id: true },
+    });
+
+    if (!superCat) {
+      return { ok: false as const, error: "No Super Category available" };
+    }
+
     const category = await prisma.category.create({
       data: {
         name: parsedInput.name,
         slug: finalSlug,
         isActive: true,
+        superCategoryId: superCat.id,
       },
     });
 

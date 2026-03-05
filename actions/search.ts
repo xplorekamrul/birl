@@ -44,7 +44,7 @@ export async function searchProducts(query: string) {
             slug: true,
             basePrice: true,
             salePrice: true,
-            images: {
+            media: {
                select: {
                   url: true,
                },
@@ -61,7 +61,7 @@ export async function searchProducts(query: string) {
          slug: product.slug,
          basePrice: Number(product.basePrice),
          salePrice: product.salePrice ? Number(product.salePrice) : null,
-         images: product.images,
+         images: product.media,
       }));
 
       return serializedProducts;

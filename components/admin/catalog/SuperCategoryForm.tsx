@@ -3,56 +3,41 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-   Select,
-   SelectContent,
-   SelectItem,
-   SelectTrigger,
-   SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import ImageUploadField from "./ImageUploadField";
 
-export interface CategoryFormData {
+export interface SuperCategoryFormData {
    name: string;
    slug: string;
    description: string;
    image: string;
-   parentId: string;
-   superCategoryId?: string;
    isActive: boolean;
    displayOrder: number;
 }
 
-interface CategoryFormProps {
-   initialData?: Partial<CategoryFormData> & { id?: string };
-   categories: Array<{ id: string; name: string }>;
-   superCategories?: Array<{ id: string; name: string }>;
-   onSubmit: (data: CategoryFormData) => Promise<void>;
+interface SuperCategoryFormProps {
+   initialData?: Partial<SuperCategoryFormData> & { id?: string };
+   onSubmit: (data: SuperCategoryFormData) => Promise<void>;
    onCancel?: () => void;
    submitLabel?: string;
    isLoading?: boolean;
 }
 
-export default function CategoryForm({
+export default function SuperCategoryForm({
    initialData,
-   categories,
-   superCategories = [],
    onSubmit,
    onCancel,
    submitLabel = "Save",
    isLoading = false,
-}: CategoryFormProps) {
-   const [formData, setFormData] = useState<CategoryFormData>({
+}: SuperCategoryFormProps) {
+   const [formData, setFormData] = useState<SuperCategoryFormData>({
       name: initialData?.name || "",
       slug: initialData?.slug || "",
       description: initialData?.description || "",
       image: initialData?.image || "",
-      parentId: initialData?.parentId || "",
-      superCategoryId: initialData?.superCategoryId || "",
       isActive: initialData?.isActive ?? true,
       displayOrder: initialData?.displayOrder ?? 0,
    });
@@ -73,14 +58,9 @@ export default function CategoryForm({
       await onSubmit(formData);
    };
 
-   const handleChange = (field: keyof CategoryFormData, value: any) => {
+   const handleChange = (field: keyof SuperCategoryFormData, value: any) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
    };
-
-   // Filter out current category from parent options
-   const availableParents = categories.filter(
-      (cat) => cat.id !== (initialData?.id || "")
-   );
 
    return (
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -123,7 +103,7 @@ export default function CategoryForm({
                id="description"
                value={formData.description}
                onChange={(e) => handleChange("description", e.target.value)}
-               placeholder="Category description..."
+               placeholder="Super category description..."
                rows={3}
                disabled={isLoading}
             />
@@ -136,72 +116,20 @@ export default function CategoryForm({
             disabled={isLoading}
          />
 
-         <div className="grid gap-4 md:grid-cols-2">
-            {/* Parent Category */}
-            <div className="space-y-2">
-               <Label htmlFor="parentId">Parent Category</Label>
-               <Select
-                  value={formData.parentId || "none"}
-                  onValueChange={(value) =>
-                     handleChange("parentId", value === "none" ? "" : value)
-                  }
-                  disabled={isLoading}
-               >
-                  <SelectTrigger id="parentId">
-                     <SelectValue placeholder="Select parent category" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] overflow-y-auto">
-                     <SelectItem value="none">None (Top Level)</SelectItem>
-                     {availableParents.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                           {cat.name}
-                        </SelectItem>
-                     ))}
-                  </SelectContent>
-               </Select>
-            </div>
-
-            {/* Display Order */}
-            <div className="space-y-2">
-               <Label htmlFor="displayOrder">Display Order</Label>
-               <Input
-                  id="displayOrder"
-                  type="number"
-                  min="0"
-                  value={formData.displayOrder}
-                  onChange={(e) =>
-                     handleChange("displayOrder", parseInt(e.target.value) || 0)
-                  }
-                  disabled={isLoading}
-               />
-            </div>
+         {/* Display Order */}
+         <div className="space-y-2">
+            <Label htmlFor="displayOrder">Display Order</Label>
+            <Input
+               id="displayOrder"
+               type="number"
+               min="0"
+               value={formData.displayOrder}
+               onChange={(e) =>
+                  handleChange("displayOrder", parseInt(e.target.value) || 0)
+               }
+               disabled={isLoading}
+            />
          </div>
-
-         {/* Super Category */}
-         {superCategories.length > 0 && (
-            <div className="space-y-2">
-               <Label htmlFor="superCategoryId">Super Category</Label>
-               <Select
-                  value={formData.superCategoryId || "none"}
-                  onValueChange={(value) =>
-                     handleChange("superCategoryId", value === "none" ? "" : value)
-                  }
-                  disabled={isLoading}
-               >
-                  <SelectTrigger id="superCategoryId">
-                     <SelectValue placeholder="Select super category" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] overflow-y-auto">
-                     <SelectItem value="none">None</SelectItem>
-                     {superCategories.map((sc) => (
-                        <SelectItem key={sc.id} value={sc.id}>
-                           {sc.name}
-                        </SelectItem>
-                     ))}
-                  </SelectContent>
-               </Select>
-            </div>
-         )}
 
          {/* Is Active */}
          <div className="flex items-center space-x-2">

@@ -23,7 +23,7 @@ export const getOrderTracking = userActionClient
             items: {
                include: {
                   product: {
-                     select: { name: true, images: { take: 1 } },
+                     select: { name: true, media: { take: 1 } },
                   },
                   variant: { select: { sku: true } },
                   vendorOrder: {

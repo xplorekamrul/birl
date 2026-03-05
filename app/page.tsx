@@ -6,14 +6,10 @@ import CategoryGrid from "@/components/home/CategoryGrid";
 import Hero from "@/components/home/Hero";
 import ProductCarousel from "@/components/home/ProductCarousel";
 import VendorCards from "@/components/home/VendorCards";
-import { mapProductsToCardData } from "@/lib/home/mappers";
 import Loading from "./loading";
 
 async function HomeContent() {
   const data = await getHomeData();
-
-  const featuredForCards = mapProductsToCardData(data.featuredProducts);
-  const dealsForCards = mapProductsToCardData(data.deals);
 
   return (
     <>
@@ -23,8 +19,8 @@ async function HomeContent() {
         <CategoryGrid data={data.categories} />
         <BrandRail data={data.brands} />
         <VendorCards data={data.vendors} />
-        <ProductCarousel title="Featured" data={featuredForCards} />
-        <ProductCarousel title="Deals" data={dealsForCards} />
+        <ProductCarousel title="Featured" data={data.featuredProducts} />
+        <ProductCarousel title="Deals" data={data.deals} />
       </div>
     </>
   );
