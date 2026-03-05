@@ -174,7 +174,7 @@ export default function CartDrawerClient() {
 
                   <div className="min-w-0 flex-1">
                     <Link
-                      href={`/product/${i.slug}`}
+                      href={`/${i.slug}`}
                       className="block truncate text-sm font-medium hover:underline"
                     >
                       {i.name}

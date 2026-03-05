@@ -152,7 +152,7 @@ export default function WishlistPage() {
                               )}
                            </div>
                            <div className="flex gap-2">
-                              <Link href={`/product/${item.product?.slug}`} className="flex-1">
+                              <Link href={`/${item.product?.slug}`} className="flex-1">
                                  <Button variant="outline" className="w-full">View</Button>
                               </Link>
                               <Button className="flex-1 bg-pcolor hover:bg-scolor">Add to Cart</Button>

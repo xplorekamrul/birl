@@ -115,7 +115,7 @@
 //       const slug = res.data.product.slug;
 //       // small delay so user sees the success message
 //       setTimeout(() => {
-//         router.push(`/product/${slug}`);
+//         router.push(`/${slug}`);
 //       }, 500);
 //     } else {
 //       setFormError(
@@ -599,7 +599,7 @@
 //               {form.metaTitle || form.name || "Your product title"}
 //             </p>
 //             <p className="text-xs text-green-700 truncate">
-//               birl-ecom.com/product/{form.slug || "slug-preview"}
+//               birl-ecom.com/{form.slug || "slug-preview"}
 //             </p>
 //             <p className="mt-1 line-clamp-2 text-xs text-slate-600">
 //               {form.metaDescription ||

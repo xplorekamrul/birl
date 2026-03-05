@@ -292,7 +292,7 @@ export default function CheckoutPageClient({
 
                 <div className="flex-1 min-w-0">
                   <Link
-                    href={`/product/${item.slug}`}
+                    href={`/${item.slug}`}
                     className="block truncate text-sm font-medium hover:underline"
                   >
                     {item.name}

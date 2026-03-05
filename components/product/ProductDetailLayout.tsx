@@ -1,7 +1,7 @@
 "use client";
 
 import { toggleWishlist } from "@/actions/wishlist";
-import type { SerializedProduct } from "@/app/product/[slug]/page";
+import type { SerializedProduct } from "@/app/[slug]/page";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

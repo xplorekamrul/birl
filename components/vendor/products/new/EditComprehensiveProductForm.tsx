@@ -1,6 +1,6 @@
 "use client";
 
-import { createProductComprehensive } from "@/actions/vendor/products/create-product-comprehensive";
+import { updateProductComprehensive } from "@/actions/vendor/products/update-product-comprehensive";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -30,9 +30,11 @@ type Props = {
   warehouses: SimpleRef[];
   tags: SimpleRef[];
   existingProducts: SimpleRef[];
+  initialData?: any;
+  productId?: string;
 };
 
-const defaultValues: ProductComprehensiveValues = {
+const defaultValuesPlaceholder: ProductComprehensiveValues = {
   name: "",
   slug: "",
   categoryId: "",
@@ -96,16 +98,18 @@ export default function ComprehensiveProductForm({
   warehouses,
   tags,
   existingProducts,
+  initialData,
+  productId,
 }: Props) {
   const router = useRouter();
-  const { executeAsync, status } = useAction(createProductComprehensive);
+  const { executeAsync, status } = useAction(updateProductComprehensive);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const form = useForm({
     resolver: zodResolver(productComprehensiveSchema),
-    defaultValues,
+    defaultValues: initialData || defaultValuesPlaceholder,
     mode: "onChange",
   });
 
@@ -143,7 +147,7 @@ export default function ComprehensiveProductForm({
     setFormSuccess(null);
 
     try {
-      const response = await executeAsync(values);
+      const response = await executeAsync({ ...values, id: productId });
       const data = response?.data;
 
       if (data?.ok) {
@@ -330,7 +334,7 @@ export default function ComprehensiveProductForm({
                 disabled={isSubmitting || !isValid}
                 className="flex items-center gap-1"
               >
-                {isSubmitting ? "Creating..." : "Create Product"}
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             ) : (
               <Button

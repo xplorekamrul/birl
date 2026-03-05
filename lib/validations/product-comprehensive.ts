@@ -69,6 +69,7 @@ export const productSeoSchema = z.object({
 
 // Main comprehensive product schema
 export const productComprehensiveSchema = z.object({
+  id: z.string().optional(),
    // General Tab (Required)
    name: z.string().min(3, "Product name must be at least 3 characters"),
    slug: z

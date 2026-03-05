@@ -1,19 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAction } from "next-safe-action/hooks";
 import { createProductWithImages } from "@/actions/vendor/products/create-product-with-images";
 import type { ProductCreateValues } from "@/lib/validations/product";
+import { useAction } from "next-safe-action/hooks";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import { Separator } from "@/components/ui/separator";
 import BasicInfoSection from "./sections/BasicInfoSection";
 import DescriptionSection from "./sections/DescriptionSection";
+import FooterActionsBar from "./sections/FooterActionsBar";
+import ImagesSection from "./sections/ImagesSection";
 import PricingInventorySection from "./sections/PricingInventorySection";
 import SellingOptionsSection from "./sections/SellingOptionsSection";
 import SeoSection from "./sections/SeoSection";
-import FooterActionsBar from "./sections/FooterActionsBar";
-import ImagesSection from "./sections/ImagesSection";
 
 import {
   useDocumentUploader,
@@ -23,7 +23,7 @@ import {
 type SimpleRef = { id: string; name: string };
 
 type Props = {
-  vendorId: string; 
+  vendorId: string;
   categories: SimpleRef[];
   brands: SimpleRef[];
 };
@@ -196,7 +196,7 @@ export default function NewProductForm({
         cost: (form.cost ?? "").toString(),
       };
 
-      
+
 
       // ✅ NEW: only send what the action schema expects
       const response = await executeAsync({
@@ -208,7 +208,7 @@ export default function NewProductForm({
 
       if (isSuccess(data)) {
         setFormSuccess(data.message ?? "Product created successfully");
-        router.push(`/product/${data.product.slug}`);
+        router.push(`/${data.product.slug}`);
         return;
       }
 

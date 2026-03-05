@@ -2,10 +2,10 @@
 
 import { searchProducts } from "@/actions/search";
 import SignOutButton from "@/components/auth/SignOutButton";
+import { Loader2, Menu, Package, Search, X, } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {  Search, X, Loader2, Package, Menu,  } from "lucide-react";
 
 type Role = "DEVELOPER" | "SUPER_ADMIN" | "ADMIN" | "USER" | "VENDOR";
 
@@ -36,9 +36,10 @@ const roleNav: Record<Role, { label: string; href: string }[]> = {
     { label: "Wishlist", href: "/user/wishlist" },
   ],
   VENDOR: [
-    { label: "Vendor Dashboard", href: "/vendor" },
+    { label: "Dashboard", href: "/vendor/dashboard" },
     { label: "Products", href: "/vendor/products" },
     { label: "Orders", href: "/vendor/orders" },
+    { label: "Reports", href: "/vendor/reports" },
   ],
 };
 
@@ -151,11 +152,10 @@ export default function Navbar() {
     searchResults.map((product) => (
       <Link
         key={product.id}
-        href={`/product/${product.slug}`}
+        href={`/${product.slug}`}
         onClick={onSelect}
-        className={`flex items-center gap-3 hover:bg-muted/60 transition-colors ${
-          compact ? "p-2 rounded-md" : "p-3 border-b border-border last:border-b-0"
-        }`}
+        className={`flex items-center gap-3 hover:bg-muted/60 transition-colors ${compact ? "p-2 rounded-md" : "p-3 border-b border-border last:border-b-0"
+          }`}
       >
         {product.images[0] ? (
           <img
@@ -165,9 +165,8 @@ export default function Navbar() {
           />
         ) : (
           <div
-            className={`bg-muted rounded flex items-center justify-center shrink-0 ${
-              compact ? "w-9 h-9" : "w-11 h-11"
-            }`}
+            className={`bg-muted rounded flex items-center justify-center shrink-0 ${compact ? "w-9 h-9" : "w-11 h-11"
+              }`}
           >
             <Package className="w-5 h-5 text-muted-foreground" />
           </div>

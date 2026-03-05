@@ -13,7 +13,7 @@ function slugify(name: string) {
       .replace(/^-+|-+$/g, "");
 }
 
-export const createProductComprehensive = vendorActionClient
+export const updateProductComprehensive = vendorActionClient
    .schema(productComprehensiveSchema)
    .action(async ({ parsedInput, ctx }) => {
       const { session } = ctx;
@@ -73,7 +73,15 @@ export const createProductComprehensive = vendorActionClient
          seo,
          relatedProducts = [],
          tags = [],
+         id,
       } = parsedInput;
+
+      if (!id) {
+         return {
+            ok: false as const,
+            message: "Product ID is missing.",
+         };
+      }
 
       // Generate slug if not provided
       const finalSlug = inputSlug || slugify(name);
@@ -83,7 +91,7 @@ export const createProductComprehensive = vendorActionClient
          where: { slug: finalSlug },
       });
 
-      if (existingSlug) {
+      if (existingSlug && existingSlug.id !== id) {
          return {
             ok: false as const,
             message: "Slug already in use. Please choose a different one.",
@@ -103,43 +111,44 @@ export const createProductComprehensive = vendorActionClient
             isbn ? prisma.product.findUnique({ where: { isbn } }) : null,
          ]);
 
-         if (existingSku) {
+         if (existingSku && existingSku.id !== id) {
             return {
                ok: false as const,
                message: `SKU "${finalSku}" is already in use by another product. Please use a different SKU.`,
             };
          }
 
-         if (existingGtin) {
+         if (existingGtin && existingGtin.id !== id) {
             return {
                ok: false as const,
                message: `GTIN "${gtin}" is already in use by another product. Please use a different GTIN.`,
             };
          }
 
-         if (existingUpc) {
+         if (existingUpc && existingUpc.id !== id) {
             return {
                ok: false as const,
                message: `UPC "${upc}" is already in use by another product. Please use a different UPC.`,
             };
          }
 
-         if (existingEan) {
+         if (existingEan && existingEan.id !== id) {
             return {
                ok: false as const,
                message: `EAN "${ean}" is already in use by another product. Please use a different EAN.`,
             };
          }
 
-         if (existingIsbn) {
+         if (existingIsbn && existingIsbn.id !== id) {
             return {
                ok: false as const,
                message: `ISBN "${isbn}" is already in use by another product. Please use a different ISBN.`,
             };
          }
 
-         // Create product with all related data
-         const product = await prisma.product.create({
+         // Update product with all related data
+         const product = await prisma.product.update({
+            where: { id },
             data: {
                vendorId: vendorProfile.id,
                categoryId,
@@ -182,37 +191,56 @@ export const createProductComprehensive = vendorActionClient
                scheduledPublish: scheduledPublish ? new Date(scheduledPublish) : null,
 
                // Media
-               media: media.length > 0 ? {
-                  create: media.map((m, idx) => ({
-                     url: m.url,
-                     type: m.type,
-                     alt: m.alt || null,
-                     sortOrder: idx,
-                  })),
-               } : undefined,
+               media: {
+                  deleteMany: {},
+                  ...(media.length > 0 ? {
+                     create: media.map((m, idx) => ({
+                        url: m.url,
+                        type: m.type,
+                        alt: m.alt || null,
+                        sortOrder: idx,
+                     })),
+                  } : {})
+               },
 
                // SEO
                seo: seo ? {
-                  create: {
-                     seoTitle: seo.seoTitle || null,
-                     metaDescription: seo.metaDescription || null,
-                     focusKeyphrase: seo.focusKeyphrase || null,
-                     additionalKeywords: seo.additionalKeywords || null,
-                     facebookTitle: seo.facebookTitle || null,
-                     facebookDesc: seo.facebookDesc || null,
-                     facebookImage: seo.facebookImage || null,
-                     twitterTitle: seo.twitterTitle || null,
-                     twitterDesc: seo.twitterDesc || null,
-                     robotsSetting: seo.robotsSetting,
-                     includeSitemap: seo.includeSitemap,
-                     canonicalUrl: seo.canonicalUrl || null,
-                  },
+                  upsert: {
+                     create: {
+                        seoTitle: seo.seoTitle || null,
+                        metaDescription: seo.metaDescription || null,
+                        focusKeyphrase: seo.focusKeyphrase || null,
+                        additionalKeywords: seo.additionalKeywords || null,
+                        facebookTitle: seo.facebookTitle || null,
+                        facebookDesc: seo.facebookDesc || null,
+                        facebookImage: seo.facebookImage || null,
+                        twitterTitle: seo.twitterTitle || null,
+                        twitterDesc: seo.twitterDesc || null,
+                        robotsSetting: seo.robotsSetting,
+                        includeSitemap: seo.includeSitemap,
+                        canonicalUrl: seo.canonicalUrl || null,
+                     },
+                     update: {
+                        seoTitle: seo.seoTitle || null,
+                        metaDescription: seo.metaDescription || null,
+                        focusKeyphrase: seo.focusKeyphrase || null,
+                        additionalKeywords: seo.additionalKeywords || null,
+                        facebookTitle: seo.facebookTitle || null,
+                        facebookDesc: seo.facebookDesc || null,
+                        facebookImage: seo.facebookImage || null,
+                        twitterTitle: seo.twitterTitle || null,
+                        twitterDesc: seo.twitterDesc || null,
+                        robotsSetting: seo.robotsSetting,
+                        includeSitemap: seo.includeSitemap,
+                        canonicalUrl: seo.canonicalUrl || null,
+                     }
+                  }
                } : undefined,
 
                // Tags
-               tags: tags.length > 0 ? {
-                  connect: tags.map(tagId => ({ id: tagId })),
-               } : undefined,
+               tags: {
+                  set: tags.map(tagId => ({ id: tagId })),
+               },
             },
             select: {
                id: true,
@@ -222,6 +250,9 @@ export const createProductComprehensive = vendorActionClient
 
          // Handle variants if VARIABLE product type
          if (productType === "VARIABLE" && options.length > 0) {
+            await prisma.productOption.deleteMany({ where: { productId: product.id } });
+            await prisma.productVariant.deleteMany({ where: { productId: product.id } });
+
             // Create options
             const createdOptions = await Promise.all(
                options.map(opt =>
@@ -272,6 +303,8 @@ export const createProductComprehensive = vendorActionClient
 
          // Handle inventory/stocks
          if (stocks.length > 0) {
+            await prisma.stock.deleteMany({ where: { variant: { productId: product.id } } });
+                     
             // For SIMPLE products, create stock for base product
             if (productType === "SIMPLE") {
                // Get or create a default variant for simple products
@@ -330,6 +363,7 @@ export const createProductComprehensive = vendorActionClient
 
          // Handle related products
          if (relatedProducts.length > 0) {
+            await prisma.relatedProduct.deleteMany({ where: { sourceId: product.id } });
             await Promise.all(
                relatedProducts.map(rel =>
                   prisma.relatedProduct.create({
@@ -349,14 +383,14 @@ export const createProductComprehensive = vendorActionClient
 
          return {
             ok: true as const,
-            message: "Product created successfully",
+            message: "Product updated successfully",
             product: {
                id: product.id,
                slug: product.slug,
             },
          };
       } catch (error) {
-         console.error("Product creation error:", error);
+         console.error("Product update error:", error);
 
          // Handle Prisma unique constraint errors
          if (error instanceof Error && error.message.includes("Unique constraint failed")) {
@@ -370,7 +404,7 @@ export const createProductComprehensive = vendorActionClient
 
          return {
             ok: false as const,
-            message: error instanceof Error ? error.message : "Failed to create product",
+            message: error instanceof Error ? error.message : "Failed to update product",
          };
       }
    });
