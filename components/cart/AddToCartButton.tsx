@@ -16,6 +16,9 @@ type AddToCartButtonProps = {
   unitPrice: number;
   purchaseType?: CartPurchaseType;
   variantId?: string | null;
+  quantity?: number;
+  className?: string;
+  children?: React.ReactNode;
 };
 
 export function AddToCartButton({
@@ -27,6 +30,9 @@ export function AddToCartButton({
   unitPrice,
   purchaseType = "NEW",
   variantId = null,
+  quantity = 1,
+  className,
+  children,
 }: AddToCartButtonProps) {
   const addItem = useCartStore((s) => s.addItem);
   const openCart = useCartStore((s) => s.open);   // ← open drawer
@@ -51,7 +57,7 @@ export function AddToCartButton({
         vendorName,
         unitPrice,
         currency: "BDT",
-        quantity: 1,
+        quantity,
         purchaseType,
         variantId,
       });
@@ -73,7 +79,7 @@ export function AddToCartButton({
     startTransition(() => {
       execute({
         productId,
-        quantity: 1,
+        quantity,
         variantId,
         purchaseType,
       });
@@ -83,11 +89,11 @@ export function AddToCartButton({
   return (
     <Button
       type="button"
-      className="w-full bg-pcolor text-white hover:bg-pcolor/90"
+      className={className ?? "w-full bg-pcolor text-white hover:bg-pcolor/90"}
       disabled={loading}
       onClick={handleClick}
     >
-      {loading ? "Adding..." : "Add to cart"}
+      {loading ? "Adding..." : children ?? "Add to cart"}
     </Button>
   );
 }

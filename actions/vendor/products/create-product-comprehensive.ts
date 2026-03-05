@@ -206,6 +206,14 @@ export const createProductComprehensive = vendorActionClient
                      robotsSetting: seo.robotsSetting,
                      includeSitemap: seo.includeSitemap,
                      canonicalUrl: seo.canonicalUrl || null,
+                     schemaType: seo.schemaType || "Product",
+                     structuredData: seo.structuredData
+                        ? (() => { try { return JSON.parse(seo.structuredData!); } catch { return null; } })()
+                        : null,
+                     priorityScore: seo.priorityScore ?? 0.5,
+                     redirectUrl: seo.redirectUrl || null,
+                     redirectType: seo.redirectType || null,
+                     changeFrequency: seo.changeFrequency || "weekly",
                   },
                } : undefined,
 
