@@ -30,10 +30,14 @@ export type ProductWithRelations = Prisma.ProductGetPayload<{
    include: typeof productInclude;
 }>;
 
-export type SerializedProduct = Omit<ProductWithRelations, 'basePrice' | 'salePrice' | 'cost'> & {
+export type SerializedProduct = Omit<ProductWithRelations, 'basePrice' | 'salePrice' | 'cost' | 'weight' | 'length' | 'width' | 'height'> & {
    basePrice: number;
    salePrice: number | null;
-   cost: number;
+   cost: number | null;
+   weight: number | null;
+   length: number | null;
+   width: number | null;
+   height: number | null;
 };
 
 export default async function ProductPage({ params }: PageProps) {
@@ -65,11 +69,15 @@ export default async function ProductPage({ params }: PageProps) {
    cacheTag(`product-${slug}`);
 
    // Convert Decimal types to numbers for client component compatibility
-   const serializedProduct = {
+   const serializedProduct: SerializedProduct = {
       ...product,
       basePrice: Number(product.basePrice),
       salePrice: product.salePrice ? Number(product.salePrice) : null,
-      cost: Number(product.cost),
+      cost: product.cost ? Number(product.cost) : null,
+      weight: product.weight ? Number(product.weight) : null,
+      length: product.length ? Number(product.length) : null,
+      width: product.width ? Number(product.width) : null,
+      height: product.height ? Number(product.height) : null,
    };
 
    return (

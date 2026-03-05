@@ -91,12 +91,12 @@ export default function VendorProductCard({
 
             {/* Edit & Delete */}
             <div className="flex justify-end gap-1">
-               <Link href={`/vendor/product/${product.id}/edit`}>
+               <Link href={`/vendor/products/${product.id}/edit`}>
                   <Button size="icon" variant="secondary" className="h-8 w-8 shadow-sm">
                      <Edit2 className="h-4 w-4" />
                   </Button>
                </Link>
-               <Button
+               <Button 
                   size="icon"
                   variant="destructive"
                   className="h-8 w-8 shadow-sm"
