@@ -9,7 +9,23 @@ import "./globals.css";
 import CartDrawer from "@/components/cart/CartDrawer";
 
 
-export const metadata: Metadata = { title: "Birl Ecommerce" };
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  title: {
+    default: "Birl Ecommerce",
+    template: "%s | Birl",
+  },
+  description: "Shop the best products at Birl Ecommerce.",
+  openGraph: {
+    siteName: "Birl Ecommerce",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@BirlEcommerce",
+  },
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

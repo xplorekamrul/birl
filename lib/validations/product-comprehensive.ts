@@ -57,19 +57,30 @@ export const productSeoSchema = z.object({
    metaDescription: z.string().optional(),
    focusKeyphrase: z.string().optional(),
    additionalKeywords: z.string().optional(),
+   // Open Graph / Facebook
    facebookTitle: z.string().optional(),
    facebookDesc: z.string().optional(),
    facebookImage: z.string().optional(),
+   // Twitter / X
    twitterTitle: z.string().optional(),
    twitterDesc: z.string().optional(),
-   robotsSetting: z.string().default("index, follow"),
-   includeSitemap: z.boolean().default(true),
+   // Advanced
+   schemaType: z.string().default("Product"),
+   structuredData: z.string().optional(), // stored as JSON string, parsed on save
    canonicalUrl: z.string().optional(),
+   priorityScore: z.number().min(0).max(1).default(0.5),
+   robotsSetting: z.string().default("index, follow"),
+   // Redirects
+   redirectUrl: z.string().optional(),
+   redirectType: z.string().optional(), // "301" | "302"
+   // Sitemap
+   includeSitemap: z.boolean().default(true),
+   changeFrequency: z.string().default("weekly"),
 });
 
 // Main comprehensive product schema
 export const productComprehensiveSchema = z.object({
-  id: z.string().optional(),
+   id: z.string().optional(),
    // General Tab (Required)
    name: z.string().min(3, "Product name must be at least 3 characters"),
    slug: z

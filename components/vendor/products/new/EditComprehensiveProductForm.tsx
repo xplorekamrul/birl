@@ -75,6 +75,9 @@ const defaultValuesPlaceholder: ProductComprehensiveValues = {
   seo: {
     robotsSetting: "index, follow",
     includeSitemap: true,
+    schemaType: "Product",
+    priorityScore: 0.5,
+    changeFrequency: "weekly",
   },
   relatedProducts: [],
   tags: [],

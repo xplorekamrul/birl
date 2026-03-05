@@ -219,6 +219,14 @@ export const updateProductComprehensive = vendorActionClient
                         robotsSetting: seo.robotsSetting,
                         includeSitemap: seo.includeSitemap,
                         canonicalUrl: seo.canonicalUrl || null,
+                        schemaType: seo.schemaType || "Product",
+                        structuredData: seo.structuredData
+                           ? (() => { try { return JSON.parse(seo.structuredData!); } catch { return null; } })()
+                           : null,
+                        priorityScore: seo.priorityScore ?? 0.5,
+                        redirectUrl: seo.redirectUrl || null,
+                        redirectType: seo.redirectType || null,
+                        changeFrequency: seo.changeFrequency || "weekly",
                      },
                      update: {
                         seoTitle: seo.seoTitle || null,
@@ -233,6 +241,14 @@ export const updateProductComprehensive = vendorActionClient
                         robotsSetting: seo.robotsSetting,
                         includeSitemap: seo.includeSitemap,
                         canonicalUrl: seo.canonicalUrl || null,
+                        schemaType: seo.schemaType || "Product",
+                        structuredData: seo.structuredData
+                           ? (() => { try { return JSON.parse(seo.structuredData!); } catch { return null; } })()
+                           : null,
+                        priorityScore: seo.priorityScore ?? 0.5,
+                        redirectUrl: seo.redirectUrl || null,
+                        redirectType: seo.redirectType || null,
+                        changeFrequency: seo.changeFrequency || "weekly",
                      }
                   }
                } : undefined,
@@ -304,7 +320,7 @@ export const updateProductComprehensive = vendorActionClient
          // Handle inventory/stocks
          if (stocks.length > 0) {
             await prisma.stock.deleteMany({ where: { variant: { productId: product.id } } });
-                     
+
             // For SIMPLE products, create stock for base product
             if (productType === "SIMPLE") {
                // Get or create a default variant for simple products

@@ -142,11 +142,22 @@ export default async function VendorEditProductPage(props: { params: Promise<{ i
          twitterTitle: product.seo.twitterTitle || undefined,
          twitterDesc: product.seo.twitterDesc || undefined,
          robotsSetting: product.seo.robotsSetting || "index, follow",
-         includeSitemap: product.seo.includeSitemap,
-         canonicalUrl: product.seo.canonicalUrl || undefined,
+         includeSitemap: product.seo.includeSitemap ?? true,
+         canonicalUrl: product.seo.canonicalUrl || `/${product.slug}`,
+         schemaType: product.seo.schemaType || "Product",
+         structuredData: product.seo.structuredData
+            ? JSON.stringify(product.seo.structuredData, null, 2)
+            : undefined,
+         priorityScore: product.seo.priorityScore ?? 0.5,
+         redirectUrl: product.seo.redirectUrl || undefined,
+         redirectType: product.seo.redirectType || undefined,
+         changeFrequency: product.seo.changeFrequency || "weekly",
       } : {
          robotsSetting: "index, follow",
          includeSitemap: true,
+         schemaType: "Product",
+         priorityScore: 0.5,
+         changeFrequency: "weekly",
       },
 
       // options, variants, stocks, relatedProducts
