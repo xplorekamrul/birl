@@ -145,11 +145,12 @@ export default function ComprehensiveProductForm({
     }
   }
 
-  async function onSubmit(values: ProductComprehensiveValues) {
+  async function handleSaveProduct() {
     setFormError(null);
     setFormSuccess(null);
 
     try {
+      const values = form.getValues();
       const response = await executeAsync({ ...values, id: productId });
       const data = response?.data;
 
@@ -161,10 +162,15 @@ export default function ComprehensiveProductForm({
         return;
       }
 
-      setFormError(data?.message || "Failed to create product");
+      setFormError(data?.message || "Failed to update product");
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "An error occurred");
     }
+  }
+
+  async function onSubmit(values: ProductComprehensiveValues) {
+    // Prevent form submission - only allow via button click
+    return;
   }
 
   const activeTab = TABS[activeTabIndex];
@@ -330,10 +336,11 @@ export default function ComprehensiveProductForm({
               </Button>
             )}
 
-            {/* Continue or Create Product */}
+            {/* Continue or Save Product */}
             {isLastTab ? (
               <Button
-                type="submit"
+                type="button"
+                onClick={handleSaveProduct}
                 disabled={isSubmitting || !isValid}
                 className="flex items-center gap-1"
               >

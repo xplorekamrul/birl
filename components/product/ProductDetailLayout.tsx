@@ -113,6 +113,22 @@ export default function ProductDetailLayout({ product, isAuthenticated = false }
   const media = product.media.length > 0 ? product.media : [];
   const [imgIdx, setImgIdx] = useState(0);
 
+  // ── Image Zoom ──────────────────────────────────────────────────────────
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
+  const [zoomLevel, setZoomLevel] = useState(250);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomPos({ x, y });
+  };
+
+  const handleDoubleClick = () => {
+    setZoomLevel(prev => (prev === 250 ? 300 : 250));
+  };
+
   // ── Tabs ────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"description" | "specification" | "reviews">("description");
 
@@ -568,16 +584,40 @@ export default function ProductDetailLayout({ product, isAuthenticated = false }
         {/* ── RIGHT: Image Gallery ───────────────────────────────────── */}
         <div className="flex flex-col gap-4 sticky top-4">
           {/* Main Image */}
-          <div className="relative w-full aspect-square bg-slate-100 rounded-3xl overflow-hidden group">
+          <div
+            className="relative w-full aspect-square bg-slate-100 rounded-3xl overflow-hidden group cursor-crosshair"
+            onMouseEnter={() => setIsZooming(true)}
+            onMouseLeave={() => setIsZooming(false)}
+            onMouseMove={handleMouseMove}
+            onDoubleClick={handleDoubleClick}
+          >
             {media[imgIdx]?.url ? (
-              <Image
-                src={media[imgIdx].url}
-                alt={media[imgIdx].alt ?? product.name}
-                fill
-                className="object-cover transition-all duration-300"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
-              />
+              <>
+                <Image
+                  src={media[imgIdx].url}
+                  alt={media[imgIdx].alt ?? product.name}
+                  fill
+                  className="object-cover transition-all duration-300"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
+                />
+
+                {/* Zoom Box Overlay */}
+                {isZooming && (
+                  <div
+                    className="absolute pointer-events-none rounded-full bg-white z-20 w-[60px] h-[60px] lg:w-[140px] lg:h-[140px] shadow-[0_0_0_2000px_rgba(0,0,0,0.5),0_10px_30px_rgba(0,0,0,0.8)] ring-4 ring-white/50"
+                    style={{
+                      left: `${zoomPos.x}%`,
+                      top: `${zoomPos.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      backgroundImage: `url(${media[imgIdx].url})`,
+                      backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                      backgroundSize: `${zoomLevel}%`,
+                      backgroundRepeat: 'no-repeat',
+                    }}
+                  />
+                )}
+              </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
                 <Package className="w-16 h-16" />
@@ -588,14 +628,24 @@ export default function ProductDetailLayout({ product, isAuthenticated = false }
             {media.length > 1 && (
               <>
                 <button
-                  onClick={() => setImgIdx((p) => (p - 1 + media.length) % media.length)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImgIdx((p) => (p - 1 + media.length) % media.length);
+                  }}
+                  onMouseEnter={() => setIsZooming(false)}
+                  onMouseLeave={() => setIsZooming(true)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white z-30"
                 >
                   <ChevronLeft className="w-5 h-5 text-slate-700" />
                 </button>
                 <button
-                  onClick={() => setImgIdx((p) => (p + 1) % media.length)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImgIdx((p) => (p + 1) % media.length);
+                  }}
+                  onMouseEnter={() => setIsZooming(false)}
+                  onMouseLeave={() => setIsZooming(true)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all hover:bg-white z-30"
                 >
                   <ChevronRight className="w-5 h-5 text-slate-700" />
                 </button>

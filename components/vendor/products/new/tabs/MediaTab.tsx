@@ -1,5 +1,6 @@
 "use client";
 
+import { deleteUploadthingFile } from "@/actions/media/delete-uploadthing-file";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,12 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { compressImage, formatFileSize } from "@/lib/media/image-utils";
+import { useDocumentUploader } from "@/lib/media/uploadthing-upload";
 import { ProductComprehensiveValues } from "@/lib/validations/product-comprehensive";
 import {
   FileVideo,
   GripVertical,
   ImageIcon,
-  Link2,
+  Loader2,
   Plus,
   Upload,
   X,
@@ -70,24 +73,56 @@ function MediaCard({
   form,
 }: MediaCardProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { startUpload } = useDocumentUploader("productMedia");
 
   const currentUrl = form.watch(`media.${index}.url` as any);
   const currentType = form.watch(`media.${index}.type` as any);
 
-  const handleFileSelect = (file: File) => {
-    const url = URL.createObjectURL(file);
-    form.setValue(`media.${index}.url` as any, url);
+  const handleFileSelect = async (file: File) => {
+    try {
+      setIsUploading(true);
 
-    const altText = file.name
-      .replace(/\.[^/.]+$/, "")
-      .replace(/[-_]/g, " ");
-    form.setValue(`media.${index}.alt` as any, altText);
+      // Compress image if it's an image
+      let fileToUpload = file;
+      if (file.type.startsWith("image/")) {
+        fileToUpload = await compressImage(file, { maxSizeKB: 500 });
+        console.log(
+          `Original: ${formatFileSize(file.size)}, Compressed: ${formatFileSize(
+            fileToUpload.size
+          )}`
+        );
+      }
 
-    if (file.type.startsWith("video/")) {
-      form.setValue(`media.${index}.type` as any, "VIDEO");
-    } else {
-      form.setValue(`media.${index}.type` as any, "IMAGE");
+      // Upload to UploadThing
+      const result = await startUpload([fileToUpload]);
+
+      if (result && result[0]) {
+        // Save the UploadThing URL to the form
+        form.setValue(`media.${index}.url` as any, result[0].url);
+
+        // Auto-detect type
+        if (file.type.startsWith("video/")) {
+          form.setValue(`media.${index}.type` as any, "VIDEO");
+        } else {
+          form.setValue(`media.${index}.type` as any, "IMAGE");
+        }
+
+        // Auto-generate alt text
+        const altText = file.name
+          .replace(/\.[^/.]+$/, "")
+          .replace(/[-_]/g, " ");
+        form.setValue(`media.${index}.alt` as any, altText);
+      }
+    } catch (error) {
+      console.error("File upload failed:", error);
+      alert("Failed to upload file. Please try again.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -100,6 +135,22 @@ function MediaCard({
     },
     [index]
   );
+
+  const handleRemove = async () => {
+    // Delete from UploadThing if URL exists
+    if (currentUrl && currentUrl.includes("utfs.io")) {
+      try {
+        await deleteUploadthingFile(currentUrl);
+      } catch (error) {
+        console.error("Failed to delete from UploadThing:", error);
+      }
+    }
+
+    // Clear form values
+    form.setValue(`media.${index}.url` as any, "");
+    form.setValue(`media.${index}.alt` as any, "");
+    onRemove(index);
+  };
 
   return (
     <div
@@ -121,7 +172,7 @@ function MediaCard({
       {!isOnly && (
         <button
           type="button"
-          onClick={() => onRemove(index)}
+          onClick={() => handleRemove()}
           className="absolute top-2 right-2 z-10 p-1 rounded-full bg-white border"
         >
           <X className="h-3.5 w-3.5 text-slate-500 hover:text-red-500" />
@@ -162,33 +213,42 @@ function MediaCard({
           name={`media.${index}.url`}
           render={({ field }) => (
             <FormItem>
-              {currentUrl ? (
+              {currentUrl && !isUploading ? (
                 <div className="aspect-video rounded-lg overflow-hidden bg-slate-100">
                   {currentType === "VIDEO" ? (
                     <video src={field.value} className="w-full h-full object-cover" muted />
                   ) : (
-                    <img src={field.value} className="w-full h-full object-cover" />
+                    <img src={field.value} className="w-full h-full object-cover" alt="Product media" />
                   )}
                 </div>
               ) : (
                 <div
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => !isUploading && fileInputRef.current?.click()}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    setIsDragOver(true);
+                    if (!isUploading) setIsDragOver(true);
                   }}
                   onDragLeave={() => setIsDragOver(false)}
                   onDrop={handleDrop}
                   className={`aspect-video border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer
                     ${isDragOver ? "border-slate-700 bg-slate-100" : "border-slate-200 bg-slate-50"}
+                    ${isUploading ? "opacity-50 cursor-not-allowed" : ""}
                   `}
                 >
-                  <Upload className="h-5 w-5 text-slate-400" />
+                  {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-5 w-5 text-slate-400 animate-spin" />
+                      <span className="text-xs text-slate-500">Uploading...</span>
+                    </div>
+                  ) : (
+                    <Upload className="h-5 w-5 text-slate-400" />
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*,video/*"
                     className="hidden"
+                    disabled={isUploading}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) handleFileSelect(file);
@@ -208,7 +268,7 @@ function MediaCard({
             <FormItem>
               <FormLabel className="text-xs text-slate-500">Alt text</FormLabel>
               <FormControl>
-                <Input {...field} className="text-xs h-8" />
+                <Input {...field} className="text-xs h-8" disabled={isUploading} />
               </FormControl>
             </FormItem>
           )}
@@ -252,7 +312,7 @@ export default function MediaTab({ form }: Props) {
           <div>
             <CardTitle>Product Media</CardTitle>
             <CardDescription>
-              Add images and videos. First item is main image.
+              Add images and videos. First item is main image. Files are uploaded to secure cloud storage.
             </CardDescription>
           </div>
 
