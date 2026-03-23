@@ -1,5 +1,6 @@
 "use server";
 
+import { deleteUploadthingFile } from "@/actions/media/delete-uploadthing-file";
 import { prisma } from "@/lib/prisma";
 import { vendorActionClient } from "@/lib/safe-action/clients";
 import { productComprehensiveSchema } from "@/lib/validations/product-comprehensive";
@@ -99,6 +100,29 @@ export const updateProductComprehensive = vendorActionClient
       }
 
       try {
+         // Get existing product media to check for deleted files
+         const existingProduct = await prisma.product.findUnique({
+            where: { id },
+            select: { media: true },
+         });
+
+         // Delete files from UploadThing that are no longer in the media array
+         if (existingProduct?.media) {
+            const newMediaUrls = media.map(m => m.url);
+            const deletedMedia = existingProduct.media.filter(m => !newMediaUrls.includes(m.url));
+
+            for (const deletedFile of deletedMedia) {
+               if (deletedFile.url.includes("utfs.io")) {
+                  try {
+                     await deleteUploadthingFile(deletedFile.url);
+                  } catch (error) {
+                     console.error(`Failed to delete file from UploadThing: ${deletedFile.url}`, error);
+                     // Continue with update even if deletion fails
+                  }
+               }
+            }
+         }
+
          // Generate SKU if not provided
          const finalSku = sku || `${finalSlug}-${Date.now()}`;
 
